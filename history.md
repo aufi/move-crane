@@ -31,3 +31,18 @@ Use reading README and other docs files from `crane` and `crane-ui-plugin` repos
 ```
 Dump all my prompts into history.md file
 ```
+
+## Prompt 7
+```
+Check all crane-related repos (starting with crane itself) and draw a diagram of dependencies, how those repos are used
+```
+
+## Prompt 8
+```
+Check all crane-related repos (starting with crane itself) and draw a diagram of dependencies, how those repos are used;   use `gh` tool to fetch and search in repositories if needed
+```
+
+## Prompt 9
+```
+Dump all my prompts into history.md file
+```

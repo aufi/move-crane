@@ -1,2 +1,3 @@
 .claude
-crane-ui-plugin
+./crane/
+./crane-*/
