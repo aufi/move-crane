@@ -6,7 +6,7 @@ This document describes the dependencies and relationships between all crane-rel
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                        Crane Ecosystem Architecture                      │
+│                        Crane Ecosystem Architecture                     │
 └─────────────────────────────────────────────────────────────────────────┘
 
                         ┌──────────────────────┐
@@ -21,7 +21,7 @@ This document describes the dependencies and relationships between all crane-rel
            ▼                       ▼                        ▼
     ┌─────────────┐      ┌─────────────────┐     ┌──────────────────┐
     │crane-runner │      │ crane-ui-plugin │     │ Support Services │
-    │(ClusterTasks)│◄─────┤   (UI/React)    │    │                  │
+    │ ClusterTasks│◄─────┤   (UI/React)    │     │                  │
     └──────┬──────┘      └────────┬────────┘     │ • reverse-proxy  │
            │                      │              │ • secret-service │
            │ uses                 │ uses         └────────┬─────────┘
