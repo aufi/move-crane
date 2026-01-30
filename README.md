@@ -1,12 +1,17 @@
-# move-crane
+# move-crane notes
 
 This repository supports the integration of the `crane` container migration tool into the Konveyor applications migration project.
 
 ## About
 
-Crane is a container migration tool that is being integrated into the Konveyor ecosystem to enhance application migration capabilities.
+Crane is a container migration tool that is being integrated into the Konveyor ecosystem to enhance application migration capabilities. Great starting point is crane README https://github.com/migtools/crane?tab=readme-ov-file#overview, then feel free continue here.
 
-Great starting point is crane README https://github.com/migtools/crane?tab=readme-ov-file#overview, then feel free continue here.
+## Research notes
+
+Detailed research documentation on Kubernetes workload migrations, including migration tools comparison, personas, and practical usage examples.
+
+See [research/README.md](./research/README.md) for the full index.
+
 
 ## Crane Repositories in migtools Organization
 
