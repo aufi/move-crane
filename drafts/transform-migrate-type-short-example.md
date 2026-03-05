@@ -48,3 +48,14 @@ jq '{
     }
   }
 }' ingress.json > route.json
+```
+
+# Note on existing `crane convert`
+
+Existing `crane convert` aims to convert deprecated Kubernetes and OpenShift resource types to their modern equivalents. It primarily focuses on OpenShift BuildConfigs and ImageStreams that have been marked as deprecated and replaced by alternative solutions.
+
+  The command functions similarly to `crane export`, but instead of merely exporting the current state, it performs direct conversion to recommended replacement types. For example, BuildConfig objects can be converted while respecting registry settings (search, insecure, block
+  registries), allowing the conversion to be adapted for different environments. The output is a directory with transformed manifests (default `convert/`) that are ready for deployment to a cluster that no longer supports the deprecated types. This command is particularly
+  useful when migrating from older OpenShift versions or transitioning from OpenShift-specific resource types to standard Kubernetes or cloud-native alternatives.
+
+**It might make sense move this under transform steps.**
