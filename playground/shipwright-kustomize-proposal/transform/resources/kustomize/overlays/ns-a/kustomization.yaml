@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+patches:
+  # Docker BuildConfig -> Shipwright Build (buildah)
+  - target:
+      group: shipwright.io
+      version: v1beta1
+      kind: Build
+      name: docker-build-template
+    path: mapping/build-sample-docker.jsonpatch.yaml
+
+  # Source BuildConfig -> Shipwright Build (s2i)
+  - target:
+      group: shipwright.io
+      version: v1beta1
+      kind: Build
+      name: s2i-build-template
+    path: mapping/build-sample-s2i.jsonpatch.yaml
+
+  # Mark original BuildConfigs as ignored in target deploy bundle.
+  - target:
+      group: build.openshift.io
+      version: v1
+      kind: BuildConfig
+      name: sample-docker-bc
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          migration.konveyor.io/ignored: "true"
+
+  - target:
+      group: build.openshift.io
+      version: v1
+      kind: BuildConfig
+      name: sample-s2i-bc
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          migration.konveyor.io/ignored: "true"

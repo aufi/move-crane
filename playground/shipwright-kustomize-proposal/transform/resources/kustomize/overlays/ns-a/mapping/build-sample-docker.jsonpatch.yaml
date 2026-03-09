@@ -1,0 +1,30 @@
+- op: replace
+  path: /metadata/name
+  value: sample-docker-bc
+- op: replace
+  path: /metadata/namespace
+  value: ns-a
+- op: add
+  path: /metadata/annotations
+  value:
+    migration.konveyor.io/generated-from: build.openshift.io/v1/BuildConfig/ns-a/sample-docker-bc
+- op: replace
+  path: /spec/source/type
+  value: Git
+- op: replace
+  path: /spec/source/git/url
+  value: https://github.com/example/sample-docker.git
+- op: replace
+  path: /spec/strategy/name
+  value: buildah
+- op: replace
+  path: /spec/output/image
+  value: quay.io/example/sample-docker:latest
+- op: replace
+  path: /spec/output/pushSecret
+  value: reg-push-secret
+- op: replace
+  path: /spec/paramValues
+  value:
+    - name: dockerfile
+      value: Dockerfile.prod

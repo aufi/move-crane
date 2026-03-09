@@ -1,0 +1,39 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: sample-docker-bc
+  namespace: ns-a
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/example/sample-docker.git
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile.prod
+  output:
+    to:
+      kind: DockerImage
+      name: quay.io/example/sample-docker:latest
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: sample-s2i-bc
+  namespace: ns-a
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/example/sample-s2i.git
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: DockerImage
+        name: registry.access.redhat.com/ubi8/openjdk-17:latest
+  output:
+    to:
+      kind: DockerImage
+      name: quay.io/example/sample-s2i:latest

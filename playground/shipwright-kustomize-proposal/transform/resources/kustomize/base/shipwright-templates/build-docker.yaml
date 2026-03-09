@@ -1,0 +1,22 @@
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: docker-build-template
+  namespace: default
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    migration.konveyor.io/source-kind: BuildConfig
+spec:
+  source:
+    type: Git
+    git:
+      url: https://example.invalid/repo.git
+  strategy:
+    kind: ClusterBuildStrategy
+    name: buildah
+  output:
+    image: image-registry.example.invalid/ns/app:latest
+    pushSecret: push-secret
+  paramValues:
+    - name: dockerfile
+      value: Dockerfile
