@@ -37,6 +37,12 @@ Source documents from `../transform-kustomize-poc`:
 ```
 <TRANSFORM_DIR>/
   kustomization.yaml
+  resources/
+    deployment.yaml            # all Deployment resources (multi-doc YAML)
+    service.yaml               # all Service resources (multi-doc YAML)
+    configmap.yaml             # all ConfigMap resources (multi-doc YAML)
+    route.openshift.io.yaml    # all Route resources (multi-doc YAML)
+    ...
   patches/
     <namespace>--<group>-<version>--<kind>--<name>.patch.yaml
     ...
@@ -47,10 +53,12 @@ Source documents from `../transform-kustomize-poc`:
 ```
 
 **Key Points:**
-- `kustomization.yaml` contains `resources` (references to export files) and `patches` (with explicit `target` metadata)
+- `kustomization.yaml` contains `resources` (list of resource type files) and `patches` (with explicit `target` metadata)
+- Resources are organized by type in `resources/` directory
+- Each resource type file is a multi-document YAML containing all resources of that type (separated by `---`)
 - Patch files are JSON6902 operations serialized as YAML
-- Whiteouted resources are excluded from `resources` list
-- Deterministic patch file naming for stable Git diffs
+- Whiteouted resources are excluded from their respective resource type files
+- Deterministic naming: `<kind>.yaml` for core types, `<kind>.<group>.yaml` for non-core types
 
 ### 2.2 Multi-Stage Pipeline
 
@@ -58,18 +66,34 @@ Source documents from `../transform-kustomize-poc`:
 <TRANSFORM_DIR>/
   10_kubernetes/
     kustomization.yaml
+    resources/
+      deployment.yaml         # multi-doc YAML with all Deployments
+      service.yaml            # multi-doc YAML with all Services
+      configmap.yaml          # multi-doc YAML with all ConfigMaps
+      ...
     patches/
+      ns1--apps-v1--Deployment--myapp.patch.yaml
+      ...
     reports/
+      ignored-patches.json
     whiteouts/
+      whiteouts.json
     rendered.yaml             # kubectl kustomize output for this stage
   20_openshift/
     kustomization.yaml
+    resources/
+      route.openshift.io.yaml # multi-doc YAML with all Routes
+      ...
     patches/
+      ...
     reports/
     whiteouts/
     rendered.yaml
   30_imagestream/
     kustomization.yaml
+    resources/
+      imagestream.image.openshift.io.yaml
+      ...
     patches/
     reports/
     whiteouts/
@@ -82,6 +106,8 @@ Source documents from `../transform-kustomize-poc`:
 - Convention over configuration: stage directories are discovered by lexical ordering
 - Each stage directory: `<priority>_<pluginName>` (no comments/colons in directory names)
 - Stage execution order determined by numeric prefix (ascending)
+- Resources organized by type in `resources/` subdirectory (one file per resource type)
+- Each resource type file contains all resources of that type as multi-document YAML
 - Stage N uses `rendered.yaml` from stage N-1 as input
 - First stage (lowest numeric prefix) uses `--export-dir` as input
 - No `stage discovery` - stage discovery is automatic based on directory structure
@@ -94,8 +120,10 @@ Source documents from `../transform-kustomize-poc`:
 
 ```yaml
 resources:
-  - ../export/ns1/apps_v1_deployment_myapp.yaml
-  - ../export/ns1/v1_service_myapp.yaml
+  - resources/deployment.yaml
+  - resources/service.yaml
+  - resources/configmap.yaml
+  - resources/route.openshift.io.yaml
 
 patches:
   - path: patches/ns1--apps-v1--Deployment--myapp.patch.yaml
@@ -106,6 +134,40 @@ patches:
       name: myapp
       namespace: ns1
 ```
+
+### Resource Type File Format
+
+Each resource type file contains multiple resources separated by `---`:
+
+```yaml
+# resources/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  namespace: ns1
+spec:
+  replicas: 3
+  ...
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apper-app
+  namespace: ns2
+spec:
+  replicas: 2
+  ...
+```
+
+### Resource Type File Naming Convention
+
+- **Core types**: `<kind>.yaml` (lowercase)
+  - Examples: `deployment.yaml`, `service.yaml`, `configmap.yaml`, `secret.yaml`
+- **Non-core types**: `<kind>.<group>.yaml` (lowercase)
+  - Examples: `route.openshift.io.yaml`, `imagestream.image.openshift.io.yaml`
+- **CRDs**: `<kind>.<group>.yaml`
+  - Examples: `application.argoproj.io.yaml`, `certificate.cert-manager.io.yaml`
 
 ### Patch File (Example)
 
@@ -286,12 +348,14 @@ plugins:
 ### Epic A — `crane-lib`: Kustomize Foundations
 - **A1**: Introduce `TransformArtifact` and `PatchTarget` types in runner
 - **A2**: Add package for Kustomize serialization (op list → YAML patches)
-- **A3**: Define report structs (whiteouts, ignored patches)
+- **A3**: Add resource type grouping logic (group resources by kind/group)
+- **A4**: Define report structs (whiteouts, ignored patches)
 
 ### Epic B — `crane`: Transform Command Refactor
 - **B1**: Replace per-resource file writer → generate `kustomization.yaml` + patches
-- **B2**: Build `resources` and `patches` lists with deterministic ordering
-- **B3**: Update path helpers for new layout
+- **B2**: Implement resource grouping by type into multi-doc YAML files
+- **B3**: Build `resources` and `patches` lists with deterministic ordering
+- **B4**: Update path helpers for new layout
 
 ### Epic C — `crane`: Apply Command Refactor
 - **C1**: Remove in-process JSONPatch application → delegate to `kubectl kustomize`
@@ -323,6 +387,7 @@ plugins:
 
 ### M2 — Transform End-to-End
 - Kustomize output instead of JSONPatch files
+- Resource grouping by type into multi-doc YAML files
 - Deterministic naming and ordering
 
 ### M3 — Apply End-to-End
@@ -421,17 +486,19 @@ plugins:
 ## 13. Determinism Requirements
 
 For stable Git diffs, output must be deterministic:
-- ✅ Stable sort for `resources`
+- ✅ Stable sort for `resources` list in kustomization.yaml
+- ✅ Stable sort for resources within each resource type file
 - ✅ Stable sort for `patches`
 - ✅ Stable sort for report entries
 - ✅ Deterministic patch file naming
+- ✅ Deterministic resource type file naming
 - ✅ Deterministic stage naming (for pipeline workflow)
 
 ---
 
 ## 14. Open Questions
 
-1. **Resources reference**: Use direct references to export files or copies/symlinks?
+1. **Resource type file ordering**: How to order resources within each type file (by namespace, name, or creation order)?
 2. **Patch grouping**: One patch file per resource or multiple grouped by plugin?
 3. **Report schema**: Formal schema for reports (JSON Schema/OpenAPI)?
 4. **kubectl passthrough**: Support `--enable-helm` and other kubectl kustomize flags?
@@ -439,6 +506,8 @@ For stable Git diffs, output must be deterministic:
 6. **Core group handling**: Group field empty or "core" for core resources?
 7. **Strict mode granularity**: Fail-fast per resource or aggregate at end?
 8. **Stage discovery pattern**: Enforce exact `<num>_<plugin>` or allow variations?
+9. **Empty resource types**: Should we create empty resource type files or omit them entirely?
+10. **Version in filename**: Should we include version for non-core types (e.g., `route.v1.openshift.io.yaml`)?
 
 ---
 
@@ -469,16 +538,18 @@ For implementation tracking:
 
 1. **crane-lib**: Add TransformArtifact + PatchTarget structs
 2. **crane-lib**: Add kustomize serializer package
-3. **crane-lib**: Add whiteout/ignored-patches report structs
-4. **crane**: Refactor transform to emit kustomization.yaml + patches
-5. **crane**: Add deterministic ordering for overlay artifacts
-6. **crane**: Refactor apply to kubectl kustomize only
-7. **crane**: Add apply preflight checks and output behavior
-8. **crane+crane-lib**: Add plugin compatibility fixture suite
-9. **docs**: Update usage docs and migration notes
-10. **crane**: Add stage discovery mechanism (directory scan) (optional)
-11. **crane**: Add stage-aware CLI flags for transform/apply (optional)
-12. **crane**: Add stage execution orchestration logic (optional)
+3. **crane-lib**: Add resource type grouping logic
+4. **crane-lib**: Add whiteout/ignored-patches report structs
+5. **crane**: Refactor transform to emit kustomization.yaml + patches
+6. **crane**: Implement resource type file generation (multi-doc YAML)
+7. **crane**: Add deterministic ordering for overlay artifacts and resources
+8. **crane**: Refactor apply to kubectl kustomize only
+9. **crane**: Add apply preflight checks and output behavior
+10. **crane+crane-lib**: Add plugin compatibility fixture suite
+11. **docs**: Update usage docs and migration notes
+12. **crane**: Add stage discovery mechanism (directory scan) (optional)
+13. **crane**: Add stage-aware CLI flags for transform/apply (optional)
+14. **crane**: Add stage execution orchestration logic (optional)
 
 ---
 
