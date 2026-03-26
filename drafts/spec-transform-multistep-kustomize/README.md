@@ -56,31 +56,35 @@ Source documents from `../transform-kustomize-poc`:
 
 ```
 <TRANSFORM_DIR>/
-  pipeline.yaml                 # stage index
-  stages/
-    10_kubernetes:default_cleanup/
-      kustomization.yaml
-      patches/
-      reports/
-      whiteouts/
-      rendered.yaml             # kubectl kustomize output for this stage
-    20_openshift:route_adjustments/
-      kustomization.yaml
-      patches/
-      reports/
-      whiteouts/
-      rendered.yaml
-    30_imagestream:registry_rewrite/
-      ...
+  10_kubernetes/
+    kustomization.yaml
+    patches/
+    reports/
+    whiteouts/
+    rendered.yaml             # kubectl kustomize output for this stage
+  20_openshift/
+    kustomization.yaml
+    patches/
+    reports/
+    whiteouts/
+    rendered.yaml
+  30_imagestream/
+    kustomization.yaml
+    patches/
+    reports/
+    whiteouts/
+    rendered.yaml
   final/
     rendered.yaml               # final output from last stage
 ```
 
 **Key Points:**
-- Each stage has its own subdirectory: `<priority>_<pluginName>[:<comment>]`
-- `pipeline.yaml` contains stage metadata (priority, required, input/output paths)
+- Convention over configuration: stage directories are discovered by lexical ordering
+- Each stage directory: `<priority>_<pluginName>` (no comments/colons in directory names)
+- Stage execution order determined by numeric prefix (ascending)
 - Stage N uses `rendered.yaml` from stage N-1 as input
-- First stage (default Kubernetes) uses `--export-dir` as input
+- First stage (lowest numeric prefix) uses `--export-dir` as input
+- No `stage discovery` - stage discovery is automatic based on directory structure
 
 ---
 
@@ -129,13 +133,12 @@ patches:
 #### New Flags for Stage-Aware Workflow
 
 ```bash
---list-stages                      # print stage plan and exit
---stage <stage-id>                 # transform only one stage
---from-stage <stage-id>            # transform from stage to end
---to-stage <stage-id>              # transform from start to stage
---stages <id1,id2,...>             # transform only selected stages
---pipeline-config <path>           # YAML config with priorities/comments
---stage-comment <plugin=comment>   # override generated comments
+--list-stages                      # print discovered stages and exit
+--stage <stage-dir>                # transform only one stage (e.g., "10_kubernetes")
+--from-stage <stage-dir>           # transform from stage to end
+--to-stage <stage-dir>             # transform from start to stage
+--stages <dir1,dir2,...>           # transform only selected stages
+--plugin-config <path>             # YAML config with plugin priorities
 --resume                           # continue from first incomplete stage
 ```
 
@@ -152,62 +155,73 @@ patches:
 ### 4.2 `crane apply`
 
 #### New Behavior
-- Requires `<TRANSFORM_DIR>/kustomization.yaml`
-- Executes exclusively: `kubectl kustomize <TRANSFORM_DIR>`
+- For single-stage: Requires `<TRANSFORM_DIR>/kustomization.yaml`
+- For multi-stage: Discovers stages from directory structure
+- Executes: `kubectl kustomize <TRANSFORM_DIR>` (single) or `kubectl kustomize <TRANSFORM_DIR>/<stage-dir>` (multi)
 - Supports same stage selectors as `crane transform`
 
+#### Stage Selectors (Multi-Stage Mode)
+
+```bash
+--list-stages                      # print discovered stages and exit
+--stage <stage-dir>                # apply only one stage
+--from-stage <stage-dir>           # apply from stage to end
+--to-stage <stage-dir>             # apply from start to stage
+--stages <dir1,dir2,...>           # apply only selected stages
+--resume                           # continue from first incomplete stage
+```
+
 #### Output Behavior
-- Default: STDOUT (rendered manifests)
+- Default: STDOUT (rendered manifests from final stage)
 - With `--output-dir`: writes `<output-dir>/all.yaml`
 
 #### Preflight Validation
 - Check for `kubectl` existence
-- Check for `kustomization.yaml` existence
+- Check for `kustomization.yaml` existence (or stage directories)
 - Improved error messages on non-zero exit from kubectl
 
 ---
 
-## 5. Pipeline Configuration File
+## 5. Stage Discovery and Configuration
 
-### Example `pipeline.yaml` (Generated)
+### Convention Over Configuration
 
-```yaml
-apiVersion: crane.konveyor.io/v1alpha1
-kind: TransformPipeline
-stages:
-  - id: 10_kubernetes:default_cleanup
-    plugin: KubernetesPlugin
-    priority: 10
-    required: true
-    enabled: true
-    input: ../export
-    output: stages/10_kubernetes:default_cleanup/rendered.yaml
-  - id: 20_openshift:route_adjustments
-    plugin: OpenShiftPlugin
-    priority: 20
-    required: false
-    enabled: true
-    input: stages/10_kubernetes:default_cleanup/rendered.yaml
-    output: stages/20_openshift:route_adjustments/rendered.yaml
+Stages are **automatically discovered** from the transform directory structure:
+
+1. Scan `<TRANSFORM_DIR>` for subdirectories matching pattern: `<number>_<pluginName>`
+2. Sort discovered stages by numeric prefix (ascending)
+3. Build execution chain automatically
+
+**Example directory structure:**
+```
+transform/
+  10_kubernetes/     # executes first
+  20_openshift/      # executes second
+  30_imagestream/    # executes third
 ```
 
-### Example `--pipeline-config` (Input Configuration)
+### Optional Plugin Configuration File
+
+Optional `--plugin-config` file for setting plugin priorities:
 
 ```yaml
-defaultStagePriority: 10
 plugins:
   KubernetesPlugin:
     priority: 10
-    comment: default_cleanup
     enabled: true
   OpenShiftPlugin:
     priority: 20
-    comment: route_adjustments
     enabled: true
   ImageStreamPlugin:
     priority: 30
     enabled: false
 ```
+
+**Priority determines:**
+- Stage directory numeric prefix
+- Execution order (lower numbers execute first)
+
+**Note:** If no config file is provided, plugins execute in default discovery order with auto-assigned priorities.
 
 ---
 
@@ -293,7 +307,7 @@ plugins:
 - **E2**: Publish plugin-author migration notes
 
 ### Epic F — Stage-Aware Pipeline (Optional Extension)
-- **F1**: Stage planner and naming convention
+- **F1**: Stage discovery mechanism (scan directories matching `<num>_<plugin>` pattern)
 - **F2**: Per-stage transform execution
 - **F3**: Stage-aware apply with window flags
 - **F4**: Resume/restart behavior
@@ -321,9 +335,9 @@ plugins:
 - Documentation
 
 ### M5 — Stage-Aware Pipeline (Optional)
-- Multi-stage directory layout
+- Multi-stage directory layout with convention-based discovery
 - Stage selectors in CLI
-- Pipeline orchestration
+- Stage execution orchestration
 
 ---
 
@@ -342,6 +356,7 @@ plugins:
 ✅ Selective execution (only certain stages)
 ✅ Better CI/CD integration (stage-by-stage validation)
 ✅ Clear separation of concerns (platform vs app migration)
+✅ Convention over configuration - automatic stage discovery
 
 ---
 
@@ -420,9 +435,10 @@ For stable Git diffs, output must be deterministic:
 2. **Patch grouping**: One patch file per resource or multiple grouped by plugin?
 3. **Report schema**: Formal schema for reports (JSON Schema/OpenAPI)?
 4. **kubectl passthrough**: Support `--enable-helm` and other kubectl kustomize flags?
-5. **Stage naming collision**: How to resolve collisions with same priority?
+5. **Stage naming collision**: How to handle multiple plugins with same priority number?
 6. **Core group handling**: Group field empty or "core" for core resources?
 7. **Strict mode granularity**: Fail-fast per resource or aggregate at end?
+8. **Stage discovery pattern**: Enforce exact `<num>_<plugin>` or allow variations?
 
 ---
 
@@ -439,10 +455,10 @@ For stable Git diffs, output must be deterministic:
 
 ### Stage-Aware Pipeline (Optional)
 - [ ] Each plugin has its own stage subdirectory
-- [ ] Stage directory names are `<priority>_<plugin>[:<comment>]`
+- [ ] Stage directory names are `<priority>_<plugin>` (no comments)
 - [ ] Both transform and apply support stage selectors
 - [ ] Stage outputs are chainable and reproducible
-- [ ] `pipeline.yaml` is machine-readable and complete
+- [ ] Stage discovery is automatic based on directory structure
 - [ ] Resume behavior works correctly
 
 ---
@@ -460,9 +476,9 @@ For implementation tracking:
 7. **crane**: Add apply preflight checks and output behavior
 8. **crane+crane-lib**: Add plugin compatibility fixture suite
 9. **docs**: Update usage docs and migration notes
-10. **crane**: Add stage planner and directory layout (optional)
+10. **crane**: Add stage discovery mechanism (directory scan) (optional)
 11. **crane**: Add stage-aware CLI flags for transform/apply (optional)
-12. **crane**: Add pipeline orchestration logic (optional)
+12. **crane**: Add stage execution orchestration logic (optional)
 
 ---
 
@@ -492,21 +508,21 @@ crane transform --list-stages
 crane transform \
   --export-dir export \
   --transform-dir transform \
-  --pipeline-config pipeline-config.yaml
+  --plugin-config plugin-config.yaml
 
 # Transform only one stage
 crane transform \
-  --stage 20_openshift:route_adjustments
+  --stage 20_openshift
 
 # Transform window
 crane transform \
-  --from-stage 20_openshift:route_adjustments \
-  --to-stage 30_imagestream:registry_rewrite
+  --from-stage 20_openshift \
+  --to-stage 30_imagestream
 
 # Apply selected stages
 crane apply \
   --transform-dir transform \
-  --stages 20_openshift:route_adjustments,30_imagestream:registry_rewrite \
+  --stages 20_openshift,30_imagestream \
   --output-dir output
 
 # Resume
