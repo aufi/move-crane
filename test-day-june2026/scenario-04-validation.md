@@ -1,7 +1,6 @@
 # Scenario 4: Validation Testing
 
 **Priority:** 4 - Validation Features  
-**Duration:** ~45 minutes  
 **Goal:** Test crane's validation capabilities and error reporting
 
 ## Objective
@@ -640,17 +639,6 @@ crane validate -t transform/20_CustomStage/
 - Silent failures on incompatible resources
 - Unclear error messages
 - No recommendations provided
-
-## Time Estimate
-
-- Test Case 1 (API version): 5 min
-- Test Case 2 (CRD): 5 min
-- Test Case 3 (Quotas): 10 min
-- Test Case 4 (Storage): 5 min
-- Test Case 5 (Security): 10 min
-- Test Case 6 (Service): 5 min
-- Documentation: 5 min
-- **Total: ~45 minutes**
 
 ## Key Questions
 

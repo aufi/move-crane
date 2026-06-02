@@ -1,7 +1,6 @@
 # Scenario 3: Cluster-Level Resources Migration
 
 **Priority:** 3 - Cluster-Scoped Resource Handling  
-**Duration:** ~60 minutes  
 **Goal:** Test migration of applications with cluster-level dependencies
 
 ## Objective
@@ -567,15 +566,6 @@ kubectl apply --dry-run=server -f output/output.yaml
 - No guidance on migration
 - Silent failures when dependencies missing
 - No way to migrate cluster resources
-
-## Time Estimate
-
-- Setup: 10 min
-- Test 1 (namespace-only): 10 min
-- Test 2 (with cluster resources): 25 min
-- Test 3 (validation): 10 min
-- Documentation: 5 min
-- **Total: ~60 minutes**
 
 ## Key Questions to Answer
 

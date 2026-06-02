@@ -1,7 +1,6 @@
 # Scenario 5: Custom Plugin Creation with AI Assistance
 
 **Priority:** 5 - Custom Plugin Development  
-**Duration:** ~60 minutes  
 **Goal:** Create custom transformation plugin (BuildConfig → Shipwright)
 
 ## Objective
@@ -492,15 +491,6 @@ kubectl describe build myapp -n buildconfig-test
 - Cannot integrate plugin with crane
 - AI cannot assist meaningfully
 - No way to test plugin
-
-## Time Estimate
-
-- Planning and AI consultation: 15 min
-- Plugin implementation: 20 min
-- Build and testing: 10 min
-- Integration with crane: 10 min
-- End-to-end test: 5 min
-- **Total: ~60 minutes**
 
 ## Alternative: Simpler Plugin
 

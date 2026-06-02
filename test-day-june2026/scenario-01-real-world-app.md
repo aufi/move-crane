@@ -1,7 +1,6 @@
 # Scenario 1: Real-World Application Migration
 
 **Priority:** 1 - KubernetesPlugin Validation  
-**Duration:** ~60 minutes  
 **Goal:** Verify KubernetesPlugin correctly cleans all resource types for migration
 
 ## Objective
@@ -41,7 +40,7 @@ Multi-component application with service mesh.
 
 ### Option C: CI/CD Pipeline App
 
-For OpenShift specifically - BuildConfig, ImageStreams, etc.
+For OpenShift specifically - BuildConfig, etc.
 
 **Resources involved:**
 - DeploymentConfig (OpenShift)
@@ -593,17 +592,6 @@ kubectl describe networkpolicy mysql-network-policy -n wordpress-test
 - Patches missing for resource types
 - Incorrect patches breaking resources
 - Application fails to start due to metadata issues
-
-## Time Estimate
-
-- Setup (deploy WordPress): 10 min
-- Export: 2 min
-- Transform: 2 min
-- Analysis of patches: 10 min
-- Apply and deploy: 5 min
-- Functional testing: 10 min
-- Documentation: 15 min
-- **Total: ~55 minutes**
 
 ## Next Steps
 

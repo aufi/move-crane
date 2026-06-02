@@ -1,7 +1,6 @@
 # Scenario 2: Multi-stage Transformation with Kustomize
 
 **Priority:** 2 - Multi-stage Workflow Validation  
-**Duration:** ~60 minutes  
 **Goal:** Validate multi-stage transformation workflow clarity and usability
 
 ## Objective
@@ -744,15 +743,6 @@ kubectl get deployment backend -n app-production -o yaml | grep "image:"
 - Cannot iterate on stages without full regeneration
 - Kustomize transformations fail
 - Confusing workflow with no clear guidance
-
-## Time Estimate
-
-- Setup: 5 min
-- Export and Stage 1: 5 min
-- Stages 2-6 creation: 30 min
-- Iteration testing: 10 min
-- Deploy and validate: 10 min
-- **Total: ~60 minutes**
 
 ## Next Steps
 
