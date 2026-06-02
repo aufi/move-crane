@@ -1,7 +1,6 @@
 # Crane Test Day - June 2026
 
-**Focus:** Real-world stateless migration validation  
-**Duration:** 4-5 hours
+**Focus:** Real-world stateless migration validation
 
 ## Objectives
 
@@ -42,13 +41,12 @@ This test day validates Crane's ability to handle real-world stateless Kubernete
 
 ### Cluster Access
 Must have access to BOTH:
-- **Source cluster:** OpenShift 4.x OR upstream Kubernetes (minikube/kind)
-- **Target cluster:** OpenShift 4.x OR upstream Kubernetes (minikube/kind)
+- **Source cluster:** OpenShift 4.x (OR upstream Kubernetes (minikube/kind))
+- **Target cluster:** OpenShift 4.x (OR upstream Kubernetes (minikube/kind))
 
 Recommended combinations:
-- OpenShift 4.16 → OpenShift 4.16 (same version)
-- Kubernetes 1.30 → Kubernetes 1.30 (same version)
-- OpenShift 4.16 → Kubernetes 1.30 (cross-platform)
+- OpenShift 4.16-20 → OpenShift 4.16-20 (same version, recommended)
+- Kubernetes 1.30 → Kubernetes 1.30 (same version, fallback without OpenShift access)
 
 ### Permissions
 - **Namespace-level:** Create, read, update, delete resources
@@ -56,7 +54,7 @@ Recommended combinations:
 
 ## Test Scenarios
 
-### [Scenario 1: Real-World Application Migration](./scenario-01-real-world-app.md) (~60 min)
+### [Scenario 1: Real-World Application Migration](./scenario-01-real-world-app.md)
 **Priority 1: KubernetesPlugin Validation**
 
 Deploy and migrate real-world applications:
@@ -70,7 +68,7 @@ Deploy and migrate real-world applications:
 - No manual cleanup required
 - Application starts on target cluster
 
-### [Scenario 2: Multi-stage Transformation](./scenario-02-multistage-kustomize.md) (~60 min)
+### [Scenario 2: Multi-stage Transformation](./scenario-02-multistage-kustomize.md)
 **Priority 2: Kustomize Integration**
 
 Transform application through multiple stages:
@@ -86,7 +84,7 @@ Transform application through multiple stages:
 - Documentation is sufficient
 - Iteration workflow is clear
 
-### [Scenario 3: Cluster-Level Resources](./scenario-03-cluster-resources.md) (~60 min)
+### [Scenario 3: Cluster-Level Resources](./scenario-03-cluster-resources.md)
 **Priority 3: Cluster-Scoped Migration**
 
 Migrate application with cluster-level dependencies:
@@ -102,7 +100,7 @@ Migrate application with cluster-level dependencies:
 - Migration successful with cluster-admin rights
 - Clear guidance when resources cannot be migrated
 
-### [Scenario 4: Validation Testing](./scenario-04-validation.md) (~45 min)
+### [Scenario 4: Validation Testing](./scenario-04-validation.md)
 **Priority 4: Validation Features**
 
 Test crane's validation capabilities:
@@ -116,7 +114,7 @@ Test crane's validation capabilities:
 - Error messages are actionable
 - Recommendations are helpful
 
-### [Scenario 5: Custom Plugin Creation](./scenario-05-custom-plugin.md) (~60 min)
+### [Scenario 5: Custom Plugin Creation](./scenario-05-custom-plugin.md)
 **Priority 5: Plugin Development**
 
 Create custom plugin with AI assistance:
@@ -131,21 +129,19 @@ Create custom plugin with AI assistance:
 
 ## Timeline
 
-| Time | Activity | Duration |
-|------|----------|----------|
-| 0:00 - 0:20 | Setup & Introduction | 20 min |
-| 0:20 - 1:20 | Scenario 1: Real-World Apps | 60 min |
-| 1:20 - 1:35 | Break | 15 min |
-| 1:35 - 2:35 | Scenario 2: Multi-stage | 60 min |
-| 2:35 - 2:50 | Break | 15 min |
-| 2:50 - 3:50 | Scenario 3: Cluster Resources | 60 min |
-| 3:50 - 4:05 | Break | 15 min |
-| 4:05 - 4:50 | Scenario 4: Validation | 45 min |
-| 4:50 - 5:00 | Break | 10 min |
-| 5:00 - 6:00 | Scenario 5: Custom Plugin | 60 min |
-| 6:00 - 6:30 | Reports & Discussion | 30 min |
-
-**Total: ~6 hours**
+| Activity |
+|----------|
+| Setup & Introduction |
+| Scenario 1: Real-World Apps |
+| Break |
+| Scenario 2: Multi-stage |
+| Break |
+| Scenario 3: Cluster Resources |
+| Break |
+| Scenario 4: Validation |
+| Break |
+| Scenario 5: Custom Plugin |
+| Reports & Discussion |
 
 ## Installation
 

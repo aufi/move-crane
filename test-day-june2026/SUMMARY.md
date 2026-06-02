@@ -42,14 +42,14 @@ This test day is focused on validating crane's real-world stateless migration ca
 
 4. **[scenario-01-real-world-app.md](./scenario-01-real-world-app.md)** (15 KB, 625 lines)
    - **Priority 1:** KubernetesPlugin validation
-   - **Duration:** ~60 minutes
+
    - **Applications:** WordPress+MySQL, Microservices, CI/CD
    - **Focus:** Verify all resource types export and clean correctly
    - **Validation:** Comprehensive checklists per resource type
 
 5. **[scenario-02-multistage-kustomize.md](./scenario-02-multistage-kustomize.md)** (18 KB, 724 lines)
    - **Priority 2:** Multi-stage transformation
-   - **Duration:** ~60 minutes
+
    - **Stages:** 6 sequential transformation stages
    - **Focus:** Kustomize integration, iteration workflow
    - **Key Question:** Stage-by-stage vs full regeneration?
@@ -57,21 +57,21 @@ This test day is focused on validating crane's real-world stateless migration ca
 
 6. **[scenario-03-cluster-resources.md](./scenario-03-cluster-resources.md)** (16 KB, 617 lines)
    - **Priority 3:** Cluster-level resource migration
-   - **Duration:** ~60 minutes
+
    - **Resources:** CRDs, ClusterRoles, PriorityClass, StorageClass
    - **Focus:** Detection, export, and migration of cluster resources
    - **Tests:** Namespace-only export (expected fail), cluster resource migration, missing dependency detection
 
 7. **[scenario-04-validation.md](./scenario-04-validation.md)** (15 KB, 593 lines)
    - **Priority 4:** Validation features
-   - **Duration:** ~45 minutes
+
    - **Test Cases:** API version compatibility, missing CRDs, resource quotas, storage, security policies, service types
    - **Focus:** Error detection and message quality
    - **Validation:** Are recommendations actionable?
 
 8. **[scenario-05-custom-plugin.md](./scenario-05-custom-plugin.md)** (14 KB, 533 lines)
    - **Priority 5:** Custom plugin creation
-   - **Duration:** ~60 minutes
+
    - **Example:** BuildConfig → Shipwright conversion
    - **Focus:** Plugin development with AI assistance
    - **Tests:** Interface clarity, AI helpfulness, integration, testing
@@ -123,21 +123,19 @@ This test day is focused on validating crane's real-world stateless migration ca
 
 ## Timeline
 
-| Time | Activity | Priority |
-|------|----------|----------|
-| 0:00 - 0:20 | Setup & Introduction | - |
-| 0:20 - 1:20 | Scenario 1: Real-World Apps | P1 |
-| 1:20 - 1:35 | Break | - |
-| 1:35 - 2:35 | Scenario 2: Multi-stage | P2 |
-| 2:35 - 2:50 | Break | - |
-| 2:50 - 3:50 | Scenario 3: Cluster Resources | P3 |
-| 3:50 - 4:05 | Break | - |
-| 4:05 - 4:50 | Scenario 4: Validation | P4 |
-| 4:50 - 5:00 | Break | - |
-| 5:00 - 6:00 | Scenario 5: Custom Plugin | P5 |
-| 6:00 - 6:30 | Reports & Discussion | - |
-
-**Total:** ~6 hours
+| Activity | Priority |
+|----------|----------|
+| Setup & Introduction | - |
+| Scenario 1: Real-World Apps | P1 |
+| Break | - |
+| Scenario 2: Multi-stage | P2 |
+| Break | - |
+| Scenario 3: Cluster Resources | P3 |
+| Break | - |
+| Scenario 4: Validation | P4 |
+| Break | - |
+| Scenario 5: Custom Plugin | P5 |
+| Reports & Discussion | - |
 
 ## Expected Outputs
 
