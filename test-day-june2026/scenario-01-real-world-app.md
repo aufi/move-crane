@@ -13,7 +13,7 @@ Deploy real-world applications and validate that:
 
 ## Test Applications
 
-### Option A: WordPress + MySQL (Recommended)
+### Option A: WordPress + MySQL (Recommended start)
 
 A realistic stateless-startable application with multiple resource types.
 
@@ -25,11 +25,11 @@ A realistic stateless-startable application with multiple resource types.
 - PersistentVolumeClaims (will be empty for stateless test)
 - HorizontalPodAutoscaler (for WordPress)
 
-### Option B: Microservices E-commerce App
+### Option B: Existing Real-World App (Advanced, but Important)
 
-Multi-component application with service mesh.
+Kindy asking to find an existing real-world app, deploy it and test its migration (stateless, skip PVC). This will help us ensure crane can handle application beyond our existing tests.
 
-**Resources involved:**
+**Sample resources involved:**
 - Multiple Deployments (frontend, cart, catalog, payment)
 - Services (ClusterIP)
 - ConfigMaps (per service)
@@ -37,12 +37,6 @@ Multi-component application with service mesh.
 - NetworkPolicy (service isolation)
 - PodDisruptionBudget
 - ServiceAccounts
-
-### Option C: CI/CD Pipeline App
-
-For OpenShift specifically - BuildConfig, etc.
-
-**Resources involved:**
 - DeploymentConfig (OpenShift)
 - BuildConfig (OpenShift)
 - ImageStream (OpenShift)

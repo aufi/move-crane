@@ -1,94 +1,182 @@
-# Scenario 5: Custom Plugin Creation with AI Assistance
+# Scenario 5: Custom Plugin Creation
 
 **Priority:** 5 - Custom Plugin Development  
-**Goal:** Create custom transformation plugin (BuildConfig → Shipwright)
+**Goal:** Create custom transformation plugin to extend crane's capabilities
 
 ## Objective
 
 Test whether users can:
-1. Create a custom crane plugin with AI assistance
-2. Implement custom transformation logic
-3. Integrate plugin with crane workflow
-4. Use plugin in multi-stage transformations
+1. Understand crane plugin interface and architecture
+2. Create a custom plugin with AI assistance
+3. Implement custom transformation logic
+4. Integrate plugin with crane workflow
+5. Use plugin in multi-stage transformations
 
-## Example: BuildConfig to Shipwright Build Conversion
+## Plugin Limitations (Current Release)
 
-**Context:** OpenShift BuildConfig is OpenShift-specific and won't work on vanilla Kubernetes. Shipwright is a Kubernetes-native build framework that works cross-platform.
+**Important:** Current crane plugin system supports:
+- ✅ Adding JSONPatch transformations to existing resources
+- ✅ Marking resources for whiteout (deletion)
+- ✅ Modifying resource metadata and spec
 
-**Goal:** Create plugin to convert BuildConfig resources to Shipwright Build resources.
+**Not yet supported (coming in next release):**
+- ❌ Creating new resources (e.g., converting BuildConfig → Shipwright Build)
+- ❌ Replacing resource types entirely
+
+**This scenario focuses on what's currently possible.**
+
+## Example Plugin: CustomAnnotationPlugin
+
+We'll create a plugin that adds custom annotations and labels based on resource type and namespace patterns. This is a realistic use case for:
+- Adding organization-specific metadata
+- Tagging resources for monitoring/alerting
+- Adding compliance labels
+- Conditional transformations based on resource properties
 
 ## Prerequisites
 
 - Understanding of crane plugin architecture
 - Go programming knowledge (crane plugins are Go binaries)
-- Familiarity with BuildConfig (OpenShift) and Shipwright
+- Familiarity with JSONPatch format
+- AI assistant (Claude, ChatGPT, etc.) for code generation
 
-## Plugin Development Steps
+## Understanding the Plugin Interface
 
-### Step 1: Understand Plugin Interface
+### Step 1: Explore Plugin Contract
 
 ```bash
-# Check existing plugin structure
-ls -la ~/.local/share/crane/plugins/
-
-# Examine plugin interface documentation
-# (This should be in crane docs)
-
-# List available plugins
+# Check installed plugins
 crane plugin-manager list
 
-# Understand plugin requirements
-# - Input: Resource YAML
-# - Output: Transformed YAML
-# - Plugin contract: JSON patches or replaced resources
+# Look at plugin location
+ls -la ~/.local/share/crane/plugins/
+
+# Understand the interface by checking crane-lib
+# The key interface is in: crane-lib/transform/plugin.go
+```
+
+**Key Plugin Interface:**
+
+```go
+type PluginRequest struct {
+    unstructured.Unstructured `json:",inline"`  // The resource to transform
+    Extras map[string]string  `json:"extras,omitempty"`  // Optional flags
+}
+
+type PluginResponse struct {
+    Version    string          `json:"version,omitempty"`
+    IsWhiteOut bool            `json:"isWhiteOut,omitempty"`  // Mark for deletion
+    Patches    jsonpatch.Patch `json:"patches,omitempty"`     // JSONPatch operations
+}
+
+type Plugin interface {
+    Run(PluginRequest) (PluginResponse, error)  // Transform logic
+    Metadata() PluginMetadata                   // Plugin metadata
+}
 ```
 
 **Document:**
-- Is plugin interface well documented?
-- Are there plugin examples?
-- Is it clear how to create a plugin?
+- Is the plugin interface clear from documentation?
+- Are there examples available?
+- What questions do you have about the interface?
 
-### Step 2: Create Plugin Scaffold with AI
+### Step 2: Analyze Existing Plugin (if available)
+
+If you have access to crane-plugins repository:
+
+```bash
+# Clone crane-plugins repo (if available)
+git clone https://github.com/konveyor/crane-plugins
+
+# Or check namespace-cleanup plugin source
+# (This is typically the built-in KubernetesPlugin)
+```
+
+**What to look for:**
+- How plugin receives resources
+- How to construct JSONPatch operations
+- How to handle different resource types
+- Error handling patterns
+- Testing approaches
+
+**Document:**
+- Are existing plugins good examples?
+- Is the code well-documented?
+- Can you understand the pattern?
+
+## Plugin Development with AI
+
+### Step 3: Design Plugin Logic
+
+**Plugin Name:** `CustomAnnotationPlugin`
+
+**Behavior:**
+1. Add annotation `crane.konveyor.io/migrated-from: <source-namespace>` to all resources
+2. Add annotation `crane.konveyor.io/migration-date: <current-date>` to all resources
+3. Add label `environment: production` to Deployments and StatefulSets
+4. Add label `monitoring: enabled` to Deployments with more than 1 replica
+5. Add annotation `security-scan: required` to resources in specific namespaces
+
+This demonstrates:
+- Reading resource metadata (kind, namespace, name)
+- Reading resource spec (replica count)
+- Conditional logic based on resource properties
+- Creating JSONPatch operations
+
+### Step 4: Create Plugin with AI Assistance
 
 **Prompt to AI assistant:**
 
 ```
-I need to create a crane plugin that converts OpenShift BuildConfig resources 
-to Shipwright Build resources. 
+I need to create a crane plugin in Go that adds custom annotations and labels to Kubernetes resources during migration.
 
-BuildConfig structure:
-- apiVersion: build.openshift.io/v1
-- kind: BuildConfig
-- source: git repository
-- strategy: Docker, Source, etc.
-- output: ImageStream or external registry
+Plugin interface (from crane-lib/transform):
 
-Shipwright Build structure:
-- apiVersion: shipwright.io/v1beta1
-- kind: Build
-- source: git repository
-- strategy: Dockerfile location
-- output: image repository
+type PluginRequest struct {
+    unstructured.Unstructured
+    Extras map[string]string
+}
 
-Can you help me create a Go plugin for crane that:
-1. Detects BuildConfig resources
-2. Converts them to Shipwright Build format
-3. Returns appropriate transformations
+type PluginResponse struct {
+    Version    string
+    IsWhiteOut bool
+    Patches    jsonpatch.Patch  // []byte of JSONPatch operations
+}
+
+type Plugin interface {
+    Run(PluginRequest) (PluginResponse, error)
+    Metadata() PluginMetadata
+}
+
+I want the plugin to:
+1. Add annotation "crane.konveyor.io/migrated-from" with source namespace value
+2. Add annotation "crane.konveyor.io/migration-date" with current date
+3. Add label "environment: production" to Deployments and StatefulSets
+4. Add label "monitoring: enabled" to Deployments with replicas > 1
+5. Support optional flag "--source-namespace" to specify source namespace
+
+Can you help me create this plugin? Please include:
+- Main plugin struct and methods
+- JSONPatch generation logic
+- Binary plugin wrapper (for crane to execute as external binary)
+- Basic error handling
 ```
 
 **Expected AI output:**
 - Plugin code structure
-- Conversion logic
-- How to build and integrate
+- JSONPatch construction
+- Binary wrapper code
+- Build instructions
 
 **Document:**
 - Was AI helpful in creating plugin?
 - What did you need to clarify?
-- What was missing from AI response?
+- What was missing or incorrect in AI response?
+- How many iterations were needed?
 
-### Step 3: Implement Plugin
+### Step 5: Implement Plugin Code
 
-Create `buildconfig-to-shipwright-plugin/main.go`:
+Create `custom-annotation-plugin/main.go`:
 
 ```go
 package main
@@ -97,278 +185,220 @@ import (
     "encoding/json"
     "fmt"
     "os"
+    "time"
+
+    "github.com/konveyor/crane-lib/transform"
+    "github.com/konveyor/crane-lib/transform/cli"
+    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+}
+
+// CustomAnnotationPlugin adds migration metadata and conditional labels
+type CustomAnnotationPlugin struct {
+    SourceNamespace string
+}
+
+func (p *CustomAnnotationPlugin) Run(request transform.PluginRequest) (transform.PluginResponse, error) {
+    // Get resource metadata
+    kind := request.GetKind()
+    namespace := request.GetNamespace()
     
-    buildv1 "github.com/openshift/api/build/v1"
-    shipwrightv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-    "sigs.k8s.io/yaml"
-)
-
-// Plugin input/output structures
-type PluginInput struct {
-    Resources []Resource `json:"resources"`
+    // Build patches
+    patches := []map[string]interface{}{}
+    
+    // Add migration annotations
+    patches = append(patches, map[string]interface{}{
+        "op":    "add",
+        "path":  "/metadata/annotations",
+        "value": map[string]string{},
+    })
+    
+    patches = append(patches, map[string]interface{}{
+        "op":    "add",
+        "path":  "/metadata/annotations/crane.konveyor.io~1migrated-from",
+        "value": p.SourceNamespace,
+    })
+    
+    patches = append(patches, map[string]interface{}{
+        "op":    "add",
+        "path":  "/metadata/annotations/crane.konveyor.io~1migration-date",
+        "value": time.Now().Format("2006-01-02"),
+    })
+    
+    // Conditional labels based on resource type
+    if kind == "Deployment" || kind == "StatefulSet" {
+        patches = append(patches, map[string]interface{}{
+            "op":    "add",
+            "path":  "/metadata/labels/environment",
+            "value": "production",
+        })
+        
+        // For Deployments with replicas > 1, add monitoring label
+        if kind == "Deployment" {
+            replicas, found, _ := unstructured.NestedInt64(request.Object, "spec", "replicas")
+            if found && replicas > 1 {
+                patches = append(patches, map[string]interface{}{
+                    "op":    "add",
+                    "path":  "/metadata/labels/monitoring",
+                    "value": "enabled",
+                })
+            }
+        }
+    }
+    
+    // Namespace-specific annotations
+    if namespace == "critical-apps" || namespace == "production" {
+        patches = append(patches, map[string]interface{}{
+            "op":    "add",
+            "path":  "/metadata/annotations/security-scan",
+            "value": "required",
+        })
+    }
+    
+    // Convert patches to JSONPatch format
+    patchBytes, err := json.Marshal(patches)
+    if err != nil {
+        return transform.PluginResponse{}, fmt.Errorf("failed to marshal patches: %w", err)
+    }
+    
+    return transform.PluginResponse{
+        Version: string(transform.V1),
+        Patches: patchBytes,
+    }, nil
 }
 
-type Resource struct {
-    Content []byte `json:"content"`
-}
-
-type PluginOutput struct {
-    Patches []Patch `json:"patches"`
-}
-
-type Patch struct {
-    Target PatchTarget `json:"target"`
-    Ops    []PatchOp   `json:"ops"`
-}
-
-type PatchTarget struct {
-    Group     string `json:"group"`
-    Version   string `json:"version"`
-    Kind      string `json:"kind"`
-    Name      string `json:"name"`
-    Namespace string `json:"namespace"`
-}
-
-type PatchOp struct {
-    Op    string      `json:"op"`
-    Path  string      `json:"path"`
-    Value interface{} `json:"value,omitempty"`
+func (p *CustomAnnotationPlugin) Metadata() transform.PluginMetadata {
+    return transform.PluginMetadata{
+        Name:            "CustomAnnotationPlugin",
+        Version:         "v1.0.0",
+        RequestVersion:  []transform.Version{transform.V1},
+        ResponseVersion: []transform.Version{transform.V1},
+        OptionalFields: []transform.OptionalFields{
+            {
+                FlagName: "source-namespace",
+                Help:     "Source namespace name to record in migrated-from annotation",
+                Example:  "my-app-dev",
+            },
+        },
+    }
 }
 
 func main() {
-    // Read input from stdin
-    var input PluginInput
-    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {
-        fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
-        os.Exit(1)
-    }
-
-    output := PluginOutput{
-        Patches: []Patch{},
-    }
-
-    // Process each resource
-    for _, res := range input.Resources {
-        // Try to parse as BuildConfig
-        var bc buildv1.BuildConfig
-        if err := yaml.Unmarshal(res.Content, &bc); err != nil {
-            continue // Not a BuildConfig, skip
-        }
-
-        if bc.Kind != "BuildConfig" {
-            continue
-        }
-
-        // Convert BuildConfig to Shipwright Build
-        build := convertBuildConfigToShipwrightBuild(&bc)
-
-        // Create replacement patch
-        buildYAML, err := yaml.Marshal(build)
-        if err != nil {
-            fmt.Fprintf(os.Stderr, "Error marshaling Build: %v\n", err)
-            continue
-        }
-
-        var buildMap map[string]interface{}
-        if err := yaml.Unmarshal(buildYAML, &buildMap); err != nil {
-            fmt.Fprintf(os.Stderr, "Error unmarshaling to map: %v\n", err)
-            continue
-        }
-
-        patch := Patch{
-            Target: PatchTarget{
-                Group:     "build.openshift.io",
-                Version:   "v1",
-                Kind:      "BuildConfig",
-                Name:      bc.Name,
-                Namespace: bc.Namespace,
-            },
-            Ops: []PatchOp{
-                {
-                    Op:    "replace",
-                    Path:  "/",
-                    Value: buildMap,
-                },
-            },
-        }
-
-        output.Patches = append(output.Patches, patch)
-    }
-
-    // Write output to stdout
-    if err := json.NewEncoder(os.Stdout).Encode(output); err != nil {
-        fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
-        os.Exit(1)
-    }
-}
-
-func convertBuildConfigToShipwrightBuild(bc *buildv1.BuildConfig) *shipwrightv1beta1.Build {
-    build := &shipwrightv1beta1.Build{}
-    build.APIVersion = "shipwright.io/v1beta1"
-    build.Kind = "Build"
-    build.Name = bc.Name
-    build.Namespace = bc.Namespace
+    // Read source namespace from extras (optional flags)
+    sourceNamespace := "unknown"
     
-    // Copy labels
-    build.Labels = bc.Labels
-
-    // Convert source
-    if bc.Spec.Source.Git != nil {
-        build.Spec.Source.URL = bc.Spec.Source.Git.URI
-        build.Spec.Source.Revision = bc.Spec.Source.Git.Ref
+    plugin := &CustomAnnotationPlugin{
+        SourceNamespace: sourceNamespace,
     }
-
-    // Convert strategy
-    if bc.Spec.Strategy.DockerStrategy != nil {
-        build.Spec.Strategy.Name = "buildah"  // or another Shipwright strategy
-        if bc.Spec.Strategy.DockerStrategy.DockerfilePath != "" {
-            build.Spec.Dockerfile = bc.Spec.Strategy.DockerStrategy.DockerfilePath
-        }
+    
+    // Use crane-lib CLI helper to handle stdin/stdout communication
+    if err := cli.RunAndExit(plugin); err != nil {
+        fmt.Fprintf(os.Stderr, "Plugin error: %v\n", err)
+        os.Exit(1)
     }
-
-    // Convert output
-    if bc.Spec.Output.To != nil {
-        // Parse ImageStream reference or registry URL
-        build.Spec.Output.Image = parseOutputImage(bc.Spec.Output.To.Name)
-    }
-
-    return build
-}
-
-func parseOutputImage(imageStreamRef string) string {
-    // Logic to convert ImageStream reference to registry URL
-    // This is simplified - real implementation would be more complex
-    return "registry.example.com/" + imageStreamRef
 }
 ```
 
-**Note:** This is a simplified example. Real implementation needs:
-- Proper error handling
-- Complete field mapping
+**Note:** This is simplified example. Real implementation needs:
+- Proper error handling for missing annotations/labels paths
+- Check if annotations/labels already exist before adding
+- Handle optional flags from Extras map
+- More sophisticated JSONPatch path handling
 - Testing
-- Documentation
 
-### Step 4: Build Plugin
+**Document:**
+- Was the code structure clear?
+- What parts were confusing?
+- What additional helpers would be useful?
+
+### Step 6: Build Plugin
 
 ```bash
 # Create plugin directory
-mkdir -p buildconfig-to-shipwright-plugin
-cd buildconfig-to-shipwright-plugin
+mkdir -p custom-annotation-plugin
+cd custom-annotation-plugin
 
 # Initialize Go module
-go mod init buildconfig-to-shipwright-plugin
+go mod init custom-annotation-plugin
 
-# Add dependencies
-go get github.com/openshift/api/build/v1
-go get github.com/shipwright-io/build/pkg/apis/build/v1beta1
-go get sigs.k8s.io/yaml
+# Add crane-lib dependency
+go get github.com/konveyor/crane-lib/transform
 
-# Build plugin
-go build -o buildconfig-to-shipwright main.go
+# Create main.go (with code from above)
+# Then build
+
+go build -o custom-annotation-plugin main.go
 
 # Install plugin
 mkdir -p ~/.local/share/crane/plugins/
-cp buildconfig-to-shipwright ~/.local/share/crane/plugins/BuildConfigToShipwrightPlugin
-chmod +x ~/.local/share/crane/plugins/BuildConfigToShipwrightPlugin
+cp custom-annotation-plugin ~/.local/share/crane/plugins/CustomAnnotationPlugin
+chmod +x ~/.local/share/crane/plugins/CustomAnnotationPlugin
 ```
 
 **Document:**
 - Was build process straightforward?
 - Were dependencies clear?
-- Any build errors?
+- Any build errors encountered?
+- How long did build take?
 
-### Step 5: Test Plugin Standalone
-
-Create test BuildConfig:
-
-```bash
-cat > test-buildconfig.yaml <<EOF
-apiVersion: build.openshift.io/v1
-kind: BuildConfig
-metadata:
-  name: myapp
-  namespace: test
-spec:
-  source:
-    git:
-      uri: https://github.com/example/myapp
-      ref: main
-  strategy:
-    dockerStrategy:
-      dockerfilePath: Dockerfile
-  output:
-    to:
-      kind: ImageStreamTag
-      name: myapp:latest
-EOF
-
-# Test plugin directly (if crane has plugin test capability)
-crane plugin-manager test BuildConfigToShipwrightPlugin test-buildconfig.yaml
-
-# Or manually
-# Create plugin input JSON
-cat > plugin-input.json <<EOF
-{
-  "resources": [
-    {
-      "content": "$(cat test-buildconfig.yaml | base64)"
-    }
-  ]
-}
-EOF
-
-# Run plugin
-cat plugin-input.json | ~/.local/share/crane/plugins/BuildConfigToShipwrightPlugin
-```
-
-**Expected output:**
-- JSON with patches
-- Replacement of BuildConfig with Shipwright Build
-
-**Document:**
-- Did plugin execute successfully?
-- Was output correct?
-- Were there errors?
-
-### Step 6: Integrate Plugin with Crane
+### Step 7: Test Plugin Recognition
 
 ```bash
-# Verify plugin is recognized
+# List plugins
 crane plugin-manager list
 
-# Should show: BuildConfigToShipwrightPlugin
+# Should show: CustomAnnotationPlugin
+```
 
-# Create test namespace with BuildConfig on source cluster
+**Document:**
+- Did crane recognize the plugin?
+- Was it listed correctly?
+- Any errors during plugin discovery?
+
+### Step 8: Create Test Application
+
+```bash
+# Create test namespace on source cluster
 kubectl config use-context <source-context>
-kubectl create namespace buildconfig-test
+kubectl create namespace plugin-test
 
-# Deploy BuildConfig
-kubectl apply -f test-buildconfig.yaml
-
-# Also deploy a simple Deployment to verify normal resources still work
+# Deploy test application
 cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app
-  namespace: buildconfig-test
+  name: test-app
+  namespace: plugin-test
+  labels:
+    app: test
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      app: myapp
+      app: test
   template:
     metadata:
       labels:
-        app: myapp
+        app: test
     spec:
       containers:
       - name: app
         image: nginx:1.25
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service
+  namespace: plugin-test
+spec:
+  selector:
+    app: test
+  ports:
+  - port: 80
+    targetPort: 80
 EOF
 ```
 
-### Step 7: Use Plugin in Migration
+### Step 9: Export and Transform with Custom Plugin
 
 ```bash
 # Create working directory
@@ -376,101 +406,117 @@ mkdir -p ~/crane-test-custom-plugin
 cd ~/crane-test-custom-plugin
 
 # Export
-crane export -n buildconfig-test
+crane export -n plugin-test
 
-# Check BuildConfig was exported
-ls export/resources/buildconfig-test/ | grep BuildConfig
-
-# Transform with KubernetesPlugin
+# Transform with KubernetesPlugin first
 crane transform KubernetesPlugin
 
 # Transform with custom plugin
-crane transform BuildConfigToShipwrightPlugin
+crane transform CustomAnnotationPlugin
 
 # Check transform output
 tree transform/
 
-# Should have:
+# Should have both stages:
 # transform/
 # ├── 10_KubernetesPlugin/
-# └── 15_BuildConfigToShipwrightPlugin/  (or similar)
+# └── 15_CustomAnnotationPlugin/
+```
 
-# Inspect BuildConfig transformation
-cat transform/15_BuildConfigToShipwrightPlugin/resources/buildconfig.yaml
-# Should now be Shipwright Build instead of BuildConfig
+**Document:**
+- Did plugin stage get created?
+- Was priority assigned correctly?
+- How to control stage order/priority?
 
-# Apply
-crane apply
+### Step 10: Inspect Plugin Transformations
 
-# Check output
-cat output/output.yaml | grep -A 20 "kind: Build"
-# Should show Shipwright Build, not BuildConfig
+```bash
+# Check patches generated by custom plugin
+cat transform/15_CustomAnnotationPlugin/patches/plugin-test--apps-v1--Deployment--test-app.patch.yaml
+
+# Should contain patches for:
+# - crane.konveyor.io/migrated-from annotation
+# - crane.konveyor.io/migration-date annotation
+# - environment: production label (Deployment)
+# - monitoring: enabled label (replicas > 1)
+
+# Preview transformed resource
+kubectl kustomize transform/15_CustomAnnotationPlugin/ | grep -A 15 "kind: Deployment"
 ```
 
 **Validation:**
-- [ ] Plugin appears in crane plugin list
-- [ ] Plugin stage created in transform
-- [ ] BuildConfig converted to Shipwright Build
-- [ ] Other resources unchanged
-- [ ] Final output has Shipwright Build
+- [ ] Annotations added correctly
+- [ ] Labels added conditionally (based on kind and replicas)
+- [ ] No errors in patches
+- [ ] JSONPatch escape characters correct (~1 for /)
 
-### Step 8: Deploy to Target Cluster
+### Step 11: Apply and Deploy
 
 ```bash
-# Switch to target cluster (vanilla Kubernetes with Shipwright installed)
+# Generate final output
+crane apply
+
+# Check output has custom metadata
+cat output/output.yaml | grep -A 10 "annotations:"
+cat output/output.yaml | grep -A 10 "labels:"
+
+# Deploy to target cluster
 kubectl config use-context <target-context>
-
-# Install Shipwright (if not already installed)
-kubectl apply -f https://github.com/shipwright-io/build/releases/download/v0.12.0/release.yaml
-
-# Wait for Shipwright to be ready
-kubectl wait --for=condition=ready pod -l control-plane=shipwright-build -n shipwright-build --timeout=300s
-
-# Create namespace
-kubectl create namespace buildconfig-test
-
-# Apply migrated resources
+kubectl create namespace plugin-test
 kubectl apply -f output/output.yaml
 
-# Verify
-kubectl get builds -n buildconfig-test
-kubectl get deployment -n buildconfig-test
-
-# Check that Shipwright Build was created
-kubectl describe build myapp -n buildconfig-test
+# Verify custom metadata
+kubectl get deployment test-app -n plugin-test -o yaml | grep "crane.konveyor.io"
+kubectl get deployment test-app -n plugin-test -o yaml | grep "environment:"
+kubectl get deployment test-app -n plugin-test -o yaml | grep "monitoring:"
 ```
 
 **Final validation:**
-- [ ] Shipwright Build created successfully
-- [ ] No BuildConfig resources (wouldn't work on vanilla K8s anyway)
-- [ ] Regular Deployment still works
-- [ ] Build can be triggered (optional)
+- [ ] Custom annotations present
+- [ ] Custom labels present on appropriate resources
+- [ ] Conditional logic worked correctly
+- [ ] Application still functions
 
-## Plugin Development Checklist
+## Alternative Plugin Ideas
 
-### Plugin Interface
-- [ ] Plugin interface documented
-- [ ] Examples available
-- [ ] Clear input/output contract
-- [ ] Testing capabilities
+If CustomAnnotationPlugin is too complex, try simpler examples:
+
+### 1. Simple Annotation Plugin
+Adds one annotation to all resources - good for testing mechanics.
+
+### 2. Label by Namespace Plugin  
+Adds labels based on namespace naming patterns (`-dev`, `-prod`, etc.)
+
+### 3. Resource Size Classifier
+Adds labels based on resource requests/limits (small/medium/large)
+
+### 4. Whiteout Plugin
+Marks specific resource types for deletion (auto-generated Secrets, etc.)
+
+## Validation Checklist
+
+### Plugin Interface Understanding
+- [ ] Plugin interface documented and clear
+- [ ] PluginRequest/PluginResponse structure understood
+- [ ] JSONPatch format understood
+- [ ] Binary plugin wrapper pattern clear
 
 ### Development Process
-- [ ] AI assistance helpful
-- [ ] Code structure clear
+- [ ] AI assistance helpful for code generation
+- [ ] Code structure matches expectations
 - [ ] Dependencies manageable
 - [ ] Build process straightforward
 
 ### Integration
 - [ ] Plugin recognized by crane
-- [ ] Can be used in transform pipeline
+- [ ] Works in transform pipeline
 - [ ] Works with other plugins
 - [ ] Doesn't break existing functionality
 
 ### Testing
-- [ ] Can test plugin standalone
-- [ ] Can test plugin in crane pipeline
+- [ ] Can test plugin logic
 - [ ] Error handling works
-- [ ] Edge cases covered
+- [ ] Edge cases considered
 
 ## Expected Results
 
@@ -478,8 +524,8 @@ kubectl describe build myapp -n buildconfig-test
 - Plugin created with AI assistance
 - Plugin builds successfully
 - Plugin integrates with crane
-- Transformation works correctly
-- Documentation sufficient
+- Transformations work correctly
+- Clear understanding of plugin development
 
 ⚠️ **Acceptable:**
 - Some trial and error required
@@ -487,31 +533,10 @@ kubectl describe build myapp -n buildconfig-test
 - Manual testing needed
 
 ❌ **Blocking:**
-- Plugin interface undocumented
+- Plugin interface undocumented or unclear
 - Cannot integrate plugin with crane
 - AI cannot assist meaningfully
-- No way to test plugin
-
-## Alternative: Simpler Plugin
-
-If BuildConfig→Shipwright is too complex, try simpler plugin:
-
-### Example: Add Custom Annotations Plugin
-
-```go
-// Plugin that adds custom annotation to all resources
-// Much simpler - just adds annotation to metadata
-
-func main() {
-    // Read resources
-    // For each resource, add patch:
-    // - op: add
-    //   path: /metadata/annotations/migration.example.com~1migrated-by
-    //   value: custom-plugin
-}
-```
-
-This tests the plugin mechanism without complex conversion logic.
+- Build process too complex
 
 ## Key Questions
 
@@ -519,22 +544,51 @@ This tests the plugin mechanism without complex conversion logic.
 2. Can AI assistants create functional plugins?
 3. Is plugin development accessible to users?
 4. How easy is plugin integration?
-5. Can plugins be shared/distributed?
-6. Are there plugin examples in crane repo?
+5. What additional helpers/examples would help?
+6. Should crane provide plugin scaffolding tool?
 
-## Documentation Needed
+## Documentation Gaps
 
-- Plugin interface specification
-- Plugin development guide
-- Example plugins (simple to complex)
-- Testing plugins guide
-- Distribution/sharing plugins
-- Debugging plugin issues
+Based on your experience, what documentation should exist:
+
+- [ ] Plugin interface specification
+- [ ] Plugin development guide (step-by-step)
+- [ ] Example plugins (simple to complex)
+- [ ] JSONPatch construction guide
+- [ ] Testing plugins guide
+- [ ] Debugging plugin issues
+- [ ] Plugin distribution/sharing
+
+## AI Assistance Quality
+
+Rate the AI assistance:
+- Code generation quality: _____
+- Understanding of crane interface: _____
+- Error handling suggestions: _____
+- Number of iterations needed: _____
+- What could improve: _____
+
+## Plugin Limitations Note
+
+**Current limitations:** Plugin system cannot create new resources (coming in next release).
+
+**Current capabilities focus on:**
+- Adding/modifying metadata (labels, annotations)
+- Modifying spec fields
+- Conditional transformations
+- Marking resources for whiteout
+
+**Future capabilities will include:**
+- Convert between resource types (e.g., BuildConfig → Shipwright)
+- Generate new supporting resources
+- Split/merge resources
+
+**Action:** Document any use cases requiring resource creation for prioritization.
 
 ## Next Steps
 
 - Document plugin creation experience
 - Note all issues encountered
-- Suggest plugin interface improvements
-- Provide example plugin code
+- Suggest improvements
+- Identify documentation gaps
 - Complete test day reporting

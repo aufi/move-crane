@@ -12,6 +12,7 @@ crane export -n <namespace> -e <export-dir>   # Custom export directory
 ### Transform
 ```bash
 crane transform                                # Run all discovered stages
+crane transform list-plugins                   # List all available plugins, or <Tab> for autocompletion
 crane transform KubernetesPlugin               # Run specific plugin stage
 crane transform 20_CustomStage                 # Run specific custom stage
 crane transform Stage1 Stage2 Stage3           # Run multiple stages

@@ -18,7 +18,7 @@
 
 ### Testing Environment
 - **OS:** [Linux / macOS / Windows]
-- **OS Version:** [e.g., Ubuntu 24.04]
+- **OS Version:** [e.g., Fedora 43]
 
 ---
 
@@ -247,7 +247,7 @@ ___________________________________________
 ### Development Process
 
 **AI Assistant Used:** [ ] Yes [ ] No  
-**AI Assistant Name:** [e.g., Claude, ChatGPT, GitHub Copilot]
+**AI Assistant Name:** [e.g., Claude, Codex, Gemini, ...]
 
 **AI Assistance Quality:**
 - [ ] Very helpful - generated working code
@@ -374,4 +374,4 @@ ___________________________________________
 
 **Thank you for participating in the Crane Test Day!**
 
-Please submit this report to: [GitHub Issue URL / Email / Form]
+Please submit this report to: Shared google drive "Crane test day June 2026" https://github.com/migtools/crane/issues using test-day label

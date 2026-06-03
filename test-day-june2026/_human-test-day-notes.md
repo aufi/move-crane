@@ -39,4 +39,5 @@ Resources required by application that cannot be migrated by crane, needs to be 
 - docs&recommendations
 
 ## Questions
+- does the KubernetesPlugin with crane defaults cover as much as possible real world apps migration?
 - does it make sense work on transform/ dir iteratively stage-by-stage or just generate whole dir again if some change is needed?

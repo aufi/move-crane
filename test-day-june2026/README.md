@@ -1,6 +1,6 @@
 # Crane Test Day - June 2026
 
-**Focus:** Real-world stateless migration validation
+**Focus:** Real-world stateless application migration
 
 ## Objectives
 
@@ -45,12 +45,12 @@ Must have access to BOTH:
 - **Target cluster:** OpenShift 4.x (OR upstream Kubernetes (minikube/kind))
 
 Recommended combinations:
-- OpenShift 4.16-20 → OpenShift 4.16-20 (same version, recommended)
-- Kubernetes 1.30 → Kubernetes 1.30 (same version, fallback without OpenShift access)
+- OpenShift 4.16-20 → OpenShift 4.16-20 (same versions, recommended)
+- Kubernetes 1.3x → Kubernetes 1.3x (same versions current minikube/kind, fallback without OpenShift access)
 
 ### Permissions
 - **Namespace-level:** Create, read, update, delete resources
-- **Cluster-level:** Read and create ClusterRole, ClusterRoleBinding, CRDs (for Priority 3 tests)
+- **Cluster-level:** Read and create ClusterRole, ClusterRoleBinding, CRDs, etc. (for Priority 3 tests)
 
 ## Test Scenarios
 
@@ -127,25 +127,11 @@ Create custom plugin with AI assistance:
 - Plugin integrates correctly
 - Transformation works as expected
 
-## Timeline
-
-| Activity |
-|----------|
-| Setup & Introduction |
-| Scenario 1: Real-World Apps |
-| Break |
-| Scenario 2: Multi-stage |
-| Break |
-| Scenario 3: Cluster Resources |
-| Break |
-| Scenario 4: Validation |
-| Break |
-| Scenario 5: Custom Plugin |
-| Reports & Discussion |
-
 ## Installation
 
 ### Crane Binary
+
+Download from https://github.com/migtools/crane or clone repo and build locally.
 
 ```bash
 # Build from main branch
@@ -199,11 +185,11 @@ Issues that can be resolved with manual intervention:
 
 Use the [test report template](./test-report-template.md) for structured feedback.
 
-## Key Questions to Answer
+## Some Questions to Answer
 
-1. **Iterative workflow:** Does it make sense to work on `transform/` directory iteratively stage-by-stage, or regenerate the whole directory when changes are needed?
+1. **Resource coverage:** Are there resource types that KubernetesPlugin doesn't handle correctly?
 
-2. **Resource coverage:** Are there resource types that KubernetesPlugin doesn't handle correctly?
+2. **Iterative transform workflow:** Does it make sense to work on `transform/` directory iteratively stage-by-stage, or regenerate the whole directory when changes are needed?
 
 3. **Cluster-level resources:** What should crane do when cluster-level resources cannot be migrated (permissions, conflicts, etc.)?
 
