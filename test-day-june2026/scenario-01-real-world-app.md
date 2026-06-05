@@ -11,7 +11,7 @@ Deploy real-world applications and validate that:
 3. No manual intervention needed for metadata cleanup
 4. Application starts successfully on target cluster
 
-## Test Application: WordPress with MySQL
+## Sample Test Application: WordPress with MySQL
 
 A comprehensive multi-tier application based on Kubernetes tutorial, significantly extended with:
 - **MySQL 8.0** backend with persistent storage
@@ -25,7 +25,31 @@ A comprehensive multi-tier application based on Kubernetes tutorial, significant
 **Application files:** [sample-apps/wordpress/](./sample-apps/wordpress/)  
 **Source:** https://github.com/konveyor-ecosystem/kubectl-migrate/tree/main/sample-resources/wordpress
 
-## Resources Involved
+### Other real-world applications
+
+It is critical test on real-world applications that represent use-case of expected crane users.
+
+There is list with examples of multi-component open-source applications that can be deployed onto Kubernetes using standard manifests or Helm charts (without custom operators).
+
+#### 1. Zulip (Threaded Team Chat)
+Zulip utilizes a Django backend, a Tornado real-time server for WebSockets, PostgreSQL, RabbitMQ for task queuing, Memcached, and Redis.
+* **Installation Guide:** [Zulip Helm Chart on Artifact Hub](https://artifacthub.io/packages/helm/zulip/zulip)
+* **Docker/Kubernetes Source:** [Zulip Docker & Kubernetes Setup](https://github.com/zulip/docker-zulip)
+
+#### 2. Harbor (Enterprise Container Registry)
+Harbor consists of several parts including a portal, core backend, registry, job service, database (PostgreSQL), cache (Redis), and security scanner (Trivy).
+* **Installation Guide:** [Harbor Helm Chart Documentation](https://github.com/goharbor/harbor-helm)
+* **Official Deployment Blog:** [Deploying Harbor on Kubernetes via Helm (CNCF)](https://www.cncf.io/blog/2026/01/05/deploying-harbor-on-kubernetes-using-helm/)
+
+#### 3. GitLab (Cloud-Native DevOps Platform)
+The cloud-native architecture of GitLab is highly modular, orchestrating services like WebService (Puma), Sidekiq workers, Gitaly (Git RPC), GitLab Shell, alongside PostgreSQL, Redis, and Object Storage (MinIO).
+* **Installation Guide:** [Official GitLab Helm Chart Deployment Guide](https://docs.gitlab.com/charts/installation/deployment/)
+* **Repository & Chart Details:** [GitLab Helm Chart Repository](https://gitlab.com/gitlab-org/charts/gitlab)
+
+You might use application of your choice (from the list or whatever you find interesting) or continue with a sample Wordpress CMS sample below.
+
+
+## Wordpress - Resources Involved
 
 The application tests these resource types:
 - **Deployments** (wordpress-mysql, wordpress with multi-container)
@@ -363,6 +387,10 @@ grep "^kind:" output/output.yaml | sort | uniq -c
 ```bash
 # Syntax validation
 kubectl apply --dry-run=client -f output/output.yaml
+
+# Live crane validation
+kubectl config use-context <target-context>
+crane validate
 
 # Should complete without errors
 ```

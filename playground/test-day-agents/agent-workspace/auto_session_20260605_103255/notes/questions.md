@@ -1,0 +1,10 @@
+- Will all resource types be exported correctly?
+- Why don't patch count and resource count match?
+- Should crane have built-in validation command?
+- Does it make sense to work stage-by-stage or regenerate all?
+- If I re-run just Stage 2, will it pick up changes and use Stage 1 output?
+- What happens if I run 'crane transform' without arguments?
+- What does --force do? Will it overwrite my custom changes?
+- Does crane detect when cluster resources (CRDs, ClusterRoles) are needed?
+- Should there be a --include-cluster-resources flag?
+- Could crane provide a --check-cluster-dependencies dry-run mode?

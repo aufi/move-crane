@@ -1,0 +1,6 @@
+time="2026-06-05T10:34:19+02:00" level=info msg="No existing stages found, creating default stage: 10_KubernetesPlugin"
+time="2026-06-05T10:34:19+02:00" level=info msg="Populating and executing default stage"
+time="2026-06-05T10:34:19+02:00" level=info msg="Executing stage 1/1: 10_KubernetesPlugin"
+time="2026-06-05T10:34:19+02:00" level=info msg="Stage 10_KubernetesPlugin: loaded 1 input resource(s)"
+time="2026-06-05T10:34:19+02:00" level=info msg="Stage 10_KubernetesPlugin: produced 1 output resource(s)"
+time="2026-06-05T10:34:19+02:00" level=info msg="Successfully completed 1 stage(s)"

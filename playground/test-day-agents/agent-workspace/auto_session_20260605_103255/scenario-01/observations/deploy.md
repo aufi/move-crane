@@ -1,0 +1,1 @@
+Deployed pods: 2

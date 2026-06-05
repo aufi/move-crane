@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patches:
+- path: patches/test--apps-v1--Deployment--test-app.patch.yaml
+  target:
+    group: apps
+    kind: Deployment
+    name: test-app
+    namespace: test
+    version: v1
+resources:
+- resources/Deployment_apps_v1_test_test-app.yaml

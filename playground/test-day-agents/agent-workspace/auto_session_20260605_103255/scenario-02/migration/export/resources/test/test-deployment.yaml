@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-app
+  namespace: test
+  uid: fake-uid-12345
+  resourceVersion: "12345"
+  creationTimestamp: "2026-01-01T00:00:00Z"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.25

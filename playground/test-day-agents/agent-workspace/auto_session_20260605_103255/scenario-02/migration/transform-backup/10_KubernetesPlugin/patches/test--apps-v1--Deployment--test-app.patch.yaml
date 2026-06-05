@@ -1,0 +1,6 @@
+- op: remove
+  path: /metadata/resourceVersion
+- op: remove
+  path: /metadata/creationTimestamp
+- op: remove
+  path: /metadata/uid

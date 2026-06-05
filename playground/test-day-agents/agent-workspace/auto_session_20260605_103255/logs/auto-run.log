@@ -1,0 +1,40 @@
+[10:32:55] INFO: Checking prerequisites...
+[10:32:55] SUCCESS: crane found: crane:
+[10:32:55] SUCCESS: kubectl found
+[10:32:55] SUCCESS: Kubernetes contexts available
+[10:32:55] SUCCESS: yq found (helpful for YAML parsing)
+[10:32:55] INFO: Starting automated scenario execution...
+[10:32:55] INFO: Starting Scenario 1: WordPress Application Migration
+[10:32:55] INFO: Deploying WordPress sample application...
+[10:34:18] SUCCESS: WordPress deployed successfully
+[10:34:18] INFO: Working directory: /home/maufart/go/src/github.com/konveyor/move-crane/test-day-june2026/agent-workspace/auto_session_20260605_103255/scenario-01/migration
+[10:34:18] INFO: Step 1: Export resources
+[10:34:19] SUCCESS: Export completed
+[10:34:19] INFO: Step 2: Transform with KubernetesPlugin
+[10:34:19] SUCCESS: Transform completed
+[10:34:19] WARNING: Patch count (8) doesn't match resource count (23)
+[10:34:19] INFO: Step 3: Generate final output
+[10:34:19] SUCCESS: Apply completed
+[10:34:19] INFO: Step 4: Validation
+[10:34:19] SUCCESS: Validation passed (dry-run)
+[10:34:19] SUCCESS: Scenario 1 completed
+[10:34:19] INFO: Starting Scenario 2: Multi-Stage Transformation
+[10:34:19] INFO: Creating Stage 1: KubernetesPlugin
+[10:34:19] SUCCESS: Stage 1 created
+[10:34:19] INFO: Creating Stage 2: EnvironmentCustomization
+[10:34:19] SUCCESS: Stage 2 created
+[10:34:19] INFO: Testing iteration workflow (KEY QUESTION)
+[10:34:19] SUCCESS: Stage 2 re-run succeeded
+[10:34:19] WARNING: Changes were lost after re-run!
+[10:34:20] SUCCESS: Transform all stages succeeded
+[10:34:20] SUCCESS: Transform --force succeeded
+[10:34:20] WARNING: --force lost custom changes!
+[10:34:20] SUCCESS: Scenario 2 completed
+[10:34:20] INFO: Starting Scenario 3: Cluster-Level Resources
+[10:34:20] INFO: Testing cluster resource detection (simulation)
+[10:34:20] WARNING: Scenario 3 requires cluster-admin and cannot be fully automated
+[10:34:20] SUCCESS: Scenario 3 completed (manual testing recommended)
+[10:34:20] INFO: Generating final report...
+[10:34:20] SUCCESS: Report generated: /home/maufart/go/src/github.com/konveyor/move-crane/test-day-june2026/agent-workspace/auto_session_20260605_103255/AUTO_RUN_REPORT.md
+[10:34:20] INFO: Cleaning up deployed resources...
+[10:34:23] SUCCESS: WordPress cleaned up

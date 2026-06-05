@@ -1,0 +1,3 @@
+time="2026-06-05T10:34:19+02:00" level=info msg="Applying all stages..."
+time="2026-06-05T10:34:19+02:00" level=info msg="Applying final stage: 10_KubernetesPlugin"
+time="2026-06-05T10:34:19+02:00" level=info msg="Successfully applied final stage to /home/maufart/go/src/github.com/konveyor/move-crane/test-day-june2026/agent-workspace/auto_session_20260605_103255/scenario-01/migration/output/output.yaml"

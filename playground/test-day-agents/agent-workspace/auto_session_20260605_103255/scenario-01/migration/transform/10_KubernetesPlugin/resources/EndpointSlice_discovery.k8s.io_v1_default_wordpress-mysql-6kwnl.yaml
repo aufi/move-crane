@@ -1,0 +1,64 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.244.0.3
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: minikube
+  targetRef:
+    kind: Pod
+    name: wordpress-mysql-76645fc7fb-t6f4k
+    namespace: default
+    uid: cab751dd-345c-4371-a1ab-a096393748dd
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2026-06-05T08:33:21Z"
+  creationTimestamp: "2026-06-05T08:32:55Z"
+  generateName: wordpress-mysql-
+  generation: 2
+  labels:
+    app: wordpress
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    kubernetes.io/service-name: wordpress-mysql
+  managedFields:
+  - apiVersion: discovery.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:addressType: {}
+      f:endpoints: {}
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:endpoints.kubernetes.io/last-change-trigger-time: {}
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:endpointslice.kubernetes.io/managed-by: {}
+          f:kubernetes.io/service-name: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"3e7c6eda-a172-44aa-a528-851df83aa625"}: {}
+      f:ports: {}
+    manager: kube-controller-manager
+    operation: Update
+    time: "2026-06-05T08:33:21Z"
+  name: wordpress-mysql-6kwnl
+  namespace: default
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: wordpress-mysql
+    uid: 3e7c6eda-a172-44aa-a528-851df83aa625
+  resourceVersion: "5200"
+  uid: 3eefeead-9ca4-43bc-8414-9a1ade9c6208
+ports:
+- name: ""
+  port: 3306
+  protocol: TCP

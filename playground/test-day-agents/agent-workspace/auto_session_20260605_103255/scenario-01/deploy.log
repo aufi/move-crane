@@ -1,0 +1,14 @@
+# Using kubectl context: minikube
+configmap/nginx-config created
+secret/wordpress-secrets-hh2m44dbd9 created
+service/wordpress created
+service/wordpress-mysql created
+persistentvolumeclaim/mysql-pv-claim created
+persistentvolumeclaim/wordpress-pv-claim created
+deployment.apps/wordpress created
+deployment.apps/wordpress-mysql created
+job.batch/wordpress-install created
+Waiting for install mysql, wordpress and install job to be completed...
+deployment.apps/wordpress-mysql condition met
+deployment.apps/wordpress condition met
+job.batch/wordpress-install condition met

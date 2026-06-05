@@ -1,0 +1,186 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "1"
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2026-06-05T08:32:55Z"
+  generation: 1
+  labels:
+    app: wordpress
+    pod-template-hash: 76645fc7fb
+    tier: mysql
+  managedFields:
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:deployment.kubernetes.io/desired-replicas: {}
+          f:deployment.kubernetes.io/max-replicas: {}
+          f:deployment.kubernetes.io/revision: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:pod-template-hash: {}
+          f:tier: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"80fe5f8b-5ef9-4dc6-b0e9-175885b71527"}: {}
+      f:spec:
+        f:replicas: {}
+        f:selector: {}
+        f:template:
+          f:metadata:
+            f:labels:
+              .: {}
+              f:app: {}
+              f:pod-template-hash: {}
+              f:tier: {}
+          f:spec:
+            f:containers:
+              k:{"name":"mysql"}:
+                .: {}
+                f:env:
+                  .: {}
+                  k:{"name":"MYSQL_DATABASE"}:
+                    .: {}
+                    f:name: {}
+                    f:value: {}
+                  k:{"name":"MYSQL_PASSWORD"}:
+                    .: {}
+                    f:name: {}
+                    f:valueFrom:
+                      .: {}
+                      f:secretKeyRef: {}
+                  k:{"name":"MYSQL_ROOT_PASSWORD"}:
+                    .: {}
+                    f:name: {}
+                    f:valueFrom:
+                      .: {}
+                      f:secretKeyRef: {}
+                  k:{"name":"MYSQL_USER"}:
+                    .: {}
+                    f:name: {}
+                    f:value: {}
+                f:image: {}
+                f:imagePullPolicy: {}
+                f:name: {}
+                f:ports:
+                  .: {}
+                  k:{"containerPort":3306,"protocol":"TCP"}:
+                    .: {}
+                    f:containerPort: {}
+                    f:name: {}
+                    f:protocol: {}
+                f:resources: {}
+                f:terminationMessagePath: {}
+                f:terminationMessagePolicy: {}
+                f:volumeMounts:
+                  .: {}
+                  k:{"mountPath":"/var/lib/mysql"}:
+                    .: {}
+                    f:mountPath: {}
+                    f:name: {}
+            f:dnsPolicy: {}
+            f:restartPolicy: {}
+            f:schedulerName: {}
+            f:securityContext: {}
+            f:terminationGracePeriodSeconds: {}
+            f:volumes:
+              .: {}
+              k:{"name":"mysql-persistent-storage"}:
+                .: {}
+                f:name: {}
+                f:persistentVolumeClaim:
+                  .: {}
+                  f:claimName: {}
+    manager: kube-controller-manager
+    operation: Update
+    time: "2026-06-05T08:32:55Z"
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:availableReplicas: {}
+        f:fullyLabeledReplicas: {}
+        f:observedGeneration: {}
+        f:readyReplicas: {}
+        f:replicas: {}
+        f:terminatingReplicas: {}
+    manager: kube-controller-manager
+    operation: Update
+    subresource: status
+    time: "2026-06-05T08:33:21Z"
+  name: wordpress-mysql-76645fc7fb
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: wordpress-mysql
+    uid: 80fe5f8b-5ef9-4dc6-b0e9-175885b71527
+  resourceVersion: "5202"
+  uid: 7d29fcbe-0eb4-469e-9c46-f8e81c125460
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+      pod-template-hash: 76645fc7fb
+      tier: mysql
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        pod-template-hash: 76645fc7fb
+        tier: mysql
+    spec:
+      containers:
+      - env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: MYSQL_ROOT_PASSWORD
+              name: wordpress-secrets-hh2m44dbd9
+        - name: MYSQL_DATABASE
+          value: wordpress
+        - name: MYSQL_USER
+          value: wordpress
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: MYSQL_WORDPRESS_PASSWORD
+              name: wordpress-secrets-hh2m44dbd9
+        image: mysql:8.0
+        imagePullPolicy: IfNotPresent
+        name: mysql
+        ports:
+        - containerPort: 3306
+          name: mysql
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mysql-persistent-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  terminatingReplicas: 0

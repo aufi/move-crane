@@ -1,0 +1,64 @@
+addressType: IPv4
+apiVersion: discovery.k8s.io/v1
+endpoints:
+- addresses:
+  - 10.244.0.4
+  conditions:
+    ready: true
+    serving: true
+    terminating: false
+  nodeName: minikube
+  targetRef:
+    kind: Pod
+    name: wordpress-6c4b95c466-rqj2b
+    namespace: default
+    uid: f4f40a56-2ed5-4a0d-8fb9-f69cef0afe99
+kind: EndpointSlice
+metadata:
+  annotations:
+    endpoints.kubernetes.io/last-change-trigger-time: "2026-06-05T08:33:49Z"
+  creationTimestamp: "2026-06-05T08:32:55Z"
+  generateName: wordpress-
+  generation: 2
+  labels:
+    app: wordpress
+    endpointslice.kubernetes.io/managed-by: endpointslice-controller.k8s.io
+    kubernetes.io/service-name: wordpress
+  managedFields:
+  - apiVersion: discovery.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:addressType: {}
+      f:endpoints: {}
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:endpoints.kubernetes.io/last-change-trigger-time: {}
+        f:generateName: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:endpointslice.kubernetes.io/managed-by: {}
+          f:kubernetes.io/service-name: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"a505ccfc-c060-43d7-9595-3462a64e5953"}: {}
+      f:ports: {}
+    manager: kube-controller-manager
+    operation: Update
+    time: "2026-06-05T08:33:49Z"
+  name: wordpress-wsvtd
+  namespace: default
+  ownerReferences:
+  - apiVersion: v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Service
+    name: wordpress
+    uid: a505ccfc-c060-43d7-9595-3462a64e5953
+  resourceVersion: "5242"
+  uid: fefc0c55-0d6e-4b37-bc66-975a14abe563
+ports:
+- name: ""
+  port: 80
+  protocol: TCP
