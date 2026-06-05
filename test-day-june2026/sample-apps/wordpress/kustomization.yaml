@@ -1,0 +1,9 @@
+secretGenerator:
+- name: wordpress-secrets
+  envs:
+    - .env
+resources:
+  - mysql-deployment.yaml
+  - wordpress-deployment.yaml
+  - wordpress-install-job.yaml
+  - nginx-config.yaml
