@@ -1,0 +1,89 @@
+# Default values for shipwright-build Helm chart
+# This chart converts OpenShift BuildConfig to Shipwright Build
+
+# BuildConfig input (will be populated by plugin)
+buildconfig:
+  name: ""
+  namespace: ""
+  labels: {}
+
+  strategy:
+    type: ""  # Docker or Source
+
+    dockerStrategy:
+      dockerfilePath: "Dockerfile"
+      env: []
+      # Example:
+      # - name: NODE_ENV
+      #   value: production
+      buildArgs: []
+      # Example:
+      # - name: NPM_MIRROR
+      #   value: https://registry.npmjs.org/
+      noCache: false
+      forcePull: false
+      from: null
+      # Example:
+      # kind: ImageStreamTag
+      # name: nodejs:16
+
+    sourceStrategy:
+      from:
+        kind: ""
+        name: ""
+        namespace: ""
+      env: []
+      incremental: false
+      forcePull: false
+      scripts: ""
+
+  source:
+    type: ""  # Git, Binary, Dockerfile, Image, None
+
+    git:
+      uri: ""
+      ref: ""
+
+    sourceSecret: ""  # Name of secret for git clone
+
+    contextDir: ""
+
+  output:
+    to:
+      kind: ""  # DockerImage, ImageStreamTag
+      name: ""
+
+    pushSecret: ""  # Name of secret for image push
+
+# Conversion settings
+conversion:
+  # Strategy mapping
+  dockerStrategyName: "buildah"
+  sourceStrategyName: "source-to-image"
+
+  # Add conversion metadata
+  addAnnotations: true
+  annotationPrefix: "crane.konveyor.io"
+
+  # ClusterBuildStrategy kind
+  strategyKind: "ClusterBuildStrategy"
+
+  # Default timeout
+  timeout: "10m"
+
+  # Default retention
+  retention:
+    succeededLimit: 3
+    failedLimit: 3
+
+# Advanced options
+advanced:
+  # Create ServiceAccount for secrets
+  createServiceAccount: false
+  serviceAccountName: ""
+
+  # Registry settings (for buildah)
+  registries:
+    search: []
+    insecure: []
+    block: []

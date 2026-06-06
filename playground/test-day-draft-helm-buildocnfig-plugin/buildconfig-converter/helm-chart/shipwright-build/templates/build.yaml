@@ -1,0 +1,106 @@
+{{- $bc := .Values.buildconfig -}}
+{{- $strategy := include "shipwright-build.strategyName" . -}}
+{{- $paramValues := list -}}
+
+{{- if eq $bc.strategy.type "Docker" -}}
+  {{- if $bc.strategy.dockerStrategy.dockerfilePath -}}
+    {{- $paramValues = append $paramValues (dict "name" "dockerfile" "value" $bc.strategy.dockerStrategy.dockerfilePath) -}}
+  {{- end -}}
+  {{- range $bc.strategy.dockerStrategy.buildArgs -}}
+    {{- $paramValues = append $paramValues (dict "name" "build-args" "value" (printf "%s=%s" .name .value)) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if eq $bc.strategy.type "Source" -}}
+  {{- if $bc.strategy.sourceStrategy.from.name -}}
+    {{- $builderImage := include "shipwright-build.builderImage" . -}}
+    {{- $paramValues = append $paramValues (dict "name" "builder-image" "value" $builderImage) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $env := list -}}
+{{- if eq $bc.strategy.type "Docker" -}}
+  {{- $env = $bc.strategy.dockerStrategy.env -}}
+{{- else if eq $bc.strategy.type "Source" -}}
+  {{- $env = $bc.strategy.sourceStrategy.env -}}
+{{- end -}}
+
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: {{ $bc.name }}
+  namespace: {{ $bc.namespace }}
+  labels:
+    {{- include "shipwright-build.labels" . | nindent 4 }}
+    {{- with $bc.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if .Values.conversion.addAnnotations }}
+  annotations:
+    {{ .Values.conversion.annotationPrefix }}/source-kind: "BuildConfig"
+    {{ .Values.conversion.annotationPrefix }}/source-name: {{ $bc.name | quote }}
+    {{ .Values.conversion.annotationPrefix }}/source-namespace: {{ $bc.namespace | quote }}
+    {{ .Values.conversion.annotationPrefix }}/conversion-date: {{ now | date "2006-01-02T15:04:05Z07:00" | quote }}
+    {{ .Values.conversion.annotationPrefix }}/original-strategy: {{ $bc.strategy.type | quote }}
+  {{- end }}
+spec:
+  strategy:
+    kind: {{ .Values.conversion.strategyKind }}
+    name: {{ $strategy }}
+
+  {{- if $paramValues }}
+  paramValues:
+  {{- range $paramValues }}
+  - name: {{ .name }}
+    {{- if kindIs "string" .value }}
+    value: {{ .value | quote }}
+    {{- else }}
+    value: {{ .value }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $env }}
+  env:
+  {{- toYaml $env | nindent 2 }}
+  {{- end }}
+
+  {{- if eq $bc.source.type "Git" }}
+  source:
+    type: Git
+    git:
+      url: {{ $bc.source.git.uri | quote }}
+      {{- if $bc.source.git.ref }}
+      revision: {{ $bc.source.git.ref | quote }}
+      {{- end }}
+      {{- if $bc.source.sourceSecret }}
+      cloneSecret: {{ $bc.source.sourceSecret | quote }}
+      {{- end }}
+    {{- if $bc.source.contextDir }}
+    contextDir: {{ $bc.source.contextDir | quote }}
+    {{- end }}
+  {{- end }}
+
+  output:
+    image: {{ include "shipwright-build.outputImage" . | quote }}
+    {{- if $bc.output.pushSecret }}
+    pushSecret: {{ $bc.output.pushSecret | quote }}
+    {{- end }}
+
+  {{- if .Values.conversion.timeout }}
+  timeout: {{ .Values.conversion.timeout }}
+  {{- end }}
+
+  {{- if .Values.conversion.retention }}
+  retention:
+    {{- if .Values.conversion.retention.succeededLimit }}
+    succeededLimit: {{ .Values.conversion.retention.succeededLimit }}
+    {{- end }}
+    {{- if .Values.conversion.retention.failedLimit }}
+    failedLimit: {{ .Values.conversion.retention.failedLimit }}
+    {{- end }}
+  {{- end }}
+
+  {{- if .Values.advanced.createServiceAccount }}
+  serviceAccountName: {{ include "shipwright-build.serviceAccountName" . }}
+  {{- end }}

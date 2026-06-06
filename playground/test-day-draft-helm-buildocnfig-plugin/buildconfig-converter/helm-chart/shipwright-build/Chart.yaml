@@ -1,0 +1,14 @@
+apiVersion: v2
+name: shipwright-build
+description: Helm chart for converting BuildConfig to Shipwright Build
+type: application
+version: 1.0.0
+appVersion: "1.0"
+keywords:
+  - shipwright
+  - buildconfig
+  - crane
+  - openshift
+maintainers:
+  - name: crane-team
+    url: https://github.com/konveyor/crane

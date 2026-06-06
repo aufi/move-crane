@@ -1,0 +1,64 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: complex-docker-build
+  namespace: buildconfig-test
+  labels:
+    app: complex-app
+    build-type: docker
+    environment: production
+    team: platform
+  annotations:
+    description: "Complex BuildConfig with multiple features"
+    maintainer: "platform-team@example.com"
+spec:
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: docker/Dockerfile.prod
+      env:
+      - name: ENV
+        value: production
+      - name: LOG_LEVEL
+        value: info
+      - name: ENABLE_METRICS
+        value: "true"
+      - name: REGISTRY
+        value: quay.io
+      buildArgs:
+      - name: BASE_IMAGE
+        value: registry.access.redhat.com/ubi9/ubi-minimal
+      - name: GO_VERSION
+        value: "1.21"
+      - name: BUILD_DATE
+        value: "2026-06-05"
+      noCache: true
+      forcePull: true
+  source:
+    type: Git
+    git:
+      uri: https://github.com/example-org/complex-microservice
+      ref: release/v2.0
+    contextDir: services/api
+    sourceSecret:
+      name: github-enterprise-token
+  output:
+    to:
+      kind: DockerImage
+      name: quay.io/example-org/complex-app:v2.0.0
+    pushSecret:
+      name: quay-robot-account
+  triggers:
+  - type: ConfigChange
+  - type: Generic
+    generic:
+      secretReference:
+        name: build-webhook-secret
+  - type: GitHub
+    github:
+      secretReference:
+        name: github-webhook-secret
+  runPolicy: Serial
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 3
