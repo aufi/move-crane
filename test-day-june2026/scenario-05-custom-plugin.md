@@ -80,29 +80,50 @@ type Plugin interface {
 - Are there examples available?
 - What questions do you have about the interface?
 
-### Step 2: Analyze Existing Plugin (if available)
+### Step 2: Analyze Existing Plugin
 
-If you have access to crane-plugins repository:
+Use the OpenShift crane plugin as a reference example:
+
+**Repository:** https://github.com/migtools/crane-plugin-openshift
 
 ```bash
-# Clone crane-plugins repo (if available)
-git clone https://github.com/konveyor/crane-plugins
+# Clone the reference plugin repository
+git clone https://github.com/migtools/crane-plugin-openshift
+cd crane-plugin-openshift
 
-# Or check namespace-cleanup plugin source
-# (This is typically the built-in KubernetesPlugin)
+# Explore the plugin structure
+tree .
+
+# Check the main plugin implementation
+cat transform/plugin.go
+
+# Review how it handles resources
+cat transform/registry.go
+
+# See example patches
+ls -la transform/patches/
 ```
 
-**What to look for:**
-- How plugin receives resources
-- How to construct JSONPatch operations
-- How to handle different resource types
-- Error handling patterns
-- Testing approaches
+**What to look for in crane-plugin-openshift:**
+- **Plugin structure:** How `Plugin` interface is implemented
+- **Resource processing:** How plugin receives and processes resources
+- **JSONPatch creation:** How to construct patch operations
+- **Resource type handling:** How different kinds (Route, BuildConfig, ImageStream) are handled
+- **Registry pattern:** How plugin dispatches to specific handlers
+- **Error handling:** Patterns for graceful error handling
+- **Testing:** Unit tests and test fixtures
+
+**Key files to study:**
+- `transform/plugin.go` - Main plugin implementation
+- `transform/registry.go` - Handler registry pattern
+- `transform/route.go` - Example: Route resource handler
+- `transform/buildconfig.go` - Example: BuildConfig handler
+- `transform/plugin_test.go` - Unit tests
 
 **Document:**
-- Are existing plugins good examples?
-- Is the code well-documented?
-- Can you understand the pattern?
+- Are existing plugins good examples? ✓ Yes, crane-plugin-openshift is production-ready
+- Is the code well-documented? Check inline comments and README
+- Can you understand the pattern? Study the registry dispatching pattern
 
 ## Plugin Development with AI
 
