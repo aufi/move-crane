@@ -114,18 +114,33 @@ Test crane's validation capabilities:
 - Error messages are actionable
 - Recommendations are helpful
 
-### [Scenario 5: Custom Plugin Creation](./scenario-05-custom-plugin.md)
+### [Scenario 5: Custom Plugin Creation (optional)](./scenario-05-custom-plugin.md)
 **Priority 5: Plugin Development**
 
 Create custom plugin with AI assistance:
-- BuildConfig (OpenShift) → Shipwright Build conversion
-- Custom transformation logic
+- Custom annotation and label addition
+- Conditional transformations
 - Integration with crane workflow
 
 **Key validation:**
 - Plugin creation process is clear
 - Plugin integrates correctly
 - Transformation works as expected
+
+### [Scenario 6: BuildConfig to Shipwright (Kustomize, optional)](./scenario-06-buildconfig-kustomize-conversion.md)
+**Priority 6: Advanced Custom Stage with Kustomize**
+
+Convert OpenShift BuildConfig to Shipwright Build using custom stage:
+- Kustomize generators with Helm templates
+- Bash script for conversion logic
+- No custom Go plugin needed
+- Native crane apply execution
+
+**Key validation:**
+- Conversion works via Kustomize only
+- Helm templates generate valid Builds
+- Claude Code assists with Bash and Helm
+- BuildConfigs removed, Builds created
 
 ## Installation
 

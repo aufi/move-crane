@@ -1,0 +1,77 @@
+{{- $strategy := "" -}}
+{{- if eq .Values.strategy.type "Docker" -}}
+  {{- $strategy = "buildah" -}}
+{{- else if eq .Values.strategy.type "Source" -}}
+  {{- $strategy = "source-to-image" -}}
+{{- end -}}
+
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- if .Values.labels }}
+    {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
+    converted-from: buildconfig
+    crane.konveyor.io/converted: "true"
+  annotations:
+    crane.konveyor.io/original-kind: "BuildConfig"
+    crane.konveyor.io/original-name: {{ .Values.name | quote }}
+    crane.konveyor.io/conversion-method: "kustomize-helm"
+spec:
+  strategy:
+    kind: ClusterBuildStrategy
+    name: {{ $strategy }}
+
+  {{- if eq .Values.strategy.type "Docker" }}
+  {{- if or .Values.strategy.dockerStrategy.dockerfilePath .Values.strategy.dockerStrategy.buildArgs }}
+  paramValues:
+  {{- if .Values.strategy.dockerStrategy.dockerfilePath }}
+  - name: dockerfile
+    value: {{ .Values.strategy.dockerStrategy.dockerfilePath | quote }}
+  {{- end }}
+  {{- range .Values.strategy.dockerStrategy.buildArgs }}
+  - name: build-args
+    value: {{ printf "%s=%s" .name .value | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if .Values.strategy.dockerStrategy.env }}
+  env:
+  {{- toYaml .Values.strategy.dockerStrategy.env | nindent 2 }}
+  {{- end }}
+  {{- end }}
+
+  {{- if eq .Values.strategy.type "Source" }}
+  {{- if .Values.strategy.sourceStrategy.from.name }}
+  paramValues:
+  - name: builder-image
+    value: {{ .Values.strategy.sourceStrategy.from.name | quote }}
+  {{- end }}
+
+  {{- if .Values.strategy.sourceStrategy.env }}
+  env:
+  {{- toYaml .Values.strategy.sourceStrategy.env | nindent 2 }}
+  {{- end }}
+  {{- end }}
+
+  {{- if eq .Values.source.type "Git" }}
+  source:
+    type: Git
+    git:
+      url: {{ .Values.source.git.uri | quote }}
+      {{- if .Values.source.git.ref }}
+      revision: {{ .Values.source.git.ref | quote }}
+      {{- end }}
+      {{- if .Values.source.sourceSecret }}
+      cloneSecret: {{ .Values.source.sourceSecret | quote }}
+      {{- end }}
+  {{- end }}
+
+  output:
+    image: {{ .Values.output.to.name | quote }}
+    {{- if .Values.output.pushSecret }}
+    pushSecret: {{ .Values.output.pushSecret | quote }}
+    {{- end }}

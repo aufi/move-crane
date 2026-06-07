@@ -1,4 +1,4 @@
-# Scenario 5: Custom Plugin Creation
+# Scenario 5: Custom Plugin Creation (optional)
 
 **Priority:** 5 - Custom Plugin Development  
 **Goal:** Create custom transformation plugin to extend crane's capabilities

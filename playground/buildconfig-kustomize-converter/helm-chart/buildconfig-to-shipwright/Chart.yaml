@@ -1,0 +1,11 @@
+apiVersion: v2
+name: buildconfig-to-shipwright
+description: Converts OpenShift BuildConfig to Shipwright Build
+version: 1.0.0
+type: application
+keywords:
+  - shipwright
+  - buildconfig
+  - openshift
+  - crane
+  - migration

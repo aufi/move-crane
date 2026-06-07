@@ -1,0 +1,34 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: python-app
+  namespace: buildconfig-demo
+  labels:
+    app: python-app
+    build-type: source
+spec:
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: python:3.11
+        namespace: openshift
+      env:
+      - name: PIP_INDEX_URL
+        value: https://pypi.org/simple
+      - name: UPGRADE_PIP_TO_LATEST
+        value: "true"
+  source:
+    type: Git
+    git:
+      uri: https://github.com/sclorg/django-ex
+      ref: master
+    sourceSecret:
+      name: git-credentials
+  output:
+    to:
+      kind: ImageStreamTag
+      name: python-app:latest
+    pushSecret:
+      name: registry-push-secret

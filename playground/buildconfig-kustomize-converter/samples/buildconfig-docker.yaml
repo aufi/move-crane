@@ -1,0 +1,34 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: nodejs-app
+  namespace: buildconfig-demo
+  labels:
+    app: nodejs-app
+    build-type: docker
+spec:
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      env:
+      - name: NODE_ENV
+        value: production
+      - name: BUILD_LOGLEVEL
+        value: verbose
+      buildArgs:
+      - name: NODE_VERSION
+        value: "18"
+      - name: NPM_MIRROR
+        value: https://registry.npmjs.org/
+  source:
+    type: Git
+    git:
+      uri: https://github.com/sclorg/nodejs-ex
+      ref: master
+  output:
+    to:
+      kind: DockerImage
+      name: quay.io/example/nodejs-app:latest
+    pushSecret:
+      name: quay-push-secret

@@ -1,0 +1,41 @@
+# BuildConfig fields (populated by converter script)
+name: ""
+namespace: ""
+labels: {}
+
+strategy:
+  type: ""  # Docker or Source
+
+  dockerStrategy:
+    dockerfilePath: "Dockerfile"
+    env: []
+    # Example:
+    # - name: NODE_ENV
+    #   value: production
+    buildArgs: []
+    # Example:
+    # - name: NPM_MIRROR
+    #   value: https://registry.npmjs.org/
+
+  sourceStrategy:
+    from:
+      kind: ""        # ImageStreamTag, DockerImage
+      name: ""        # Image name
+      namespace: ""   # Namespace (for ImageStreamTag)
+    env: []
+
+source:
+  type: ""  # Git, Binary, Dockerfile, Image
+
+  git:
+    uri: ""
+    ref: ""
+
+  sourceSecret: ""  # Git clone secret name
+
+output:
+  to:
+    kind: ""  # DockerImage, ImageStreamTag
+    name: ""  # Output image name
+
+  pushSecret: ""  # Image push secret name
