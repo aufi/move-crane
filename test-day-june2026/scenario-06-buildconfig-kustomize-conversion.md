@@ -1,4 +1,4 @@
-# Scenario 6: BuildConfig to Shipwright Conversion with Kustomize (optional)
+# Scenario 6: BuildConfig to Shipwright Conversion with Kustomize (optional, experimental)
 
 **Priority:** 6 - Advanced Transformation with Custom Stage  
 **Goal:** Convert OpenShift BuildConfig to Shipwright Build using custom crane stage with Kustomize generators
@@ -36,30 +36,42 @@ OpenShift BuildConfig and Shipwright Build serve the same purpose (building cont
 
 ## Conversion Approach
 
-Instead of a Go plugin, we use **Kustomize configuration** with:
+Instead of a Go plugin, we use **Kustomize generators** that execute **at runtime** during `crane apply`:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ Stage: BuildConfigConversion (custom crane stage)      │
-│                                                         │
-│ Resources:                                              │
-│   - BuildConfig resources from previous stage          │
-│                                                         │
-│ Kustomization.yaml:                                    │
-│   generators:                                          │
-│     - converter.sh (Bash script)                       │
-│                                                         │
-│   replacements:                                        │
-│     - Mark BuildConfigs for removal                    │
-│                                                         │
-│ converter.sh:                                          │
-│   1. Read BuildConfig YAML files                       │
-│   2. Extract strategy, source, output                  │
-│   3. Generate Helm values                              │
-│   4. Run: helm template                                │
-│   5. Output Shipwright Build YAML                      │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  crane apply                                                    │
+└───────────────────────────┬─────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  kustomize build transform/20_BuildConfigConversion/            │
+│                                                                 │
+│  1. Read kustomization.yaml                                     │
+│  2. See generator: converter.sh                                 │
+│  3. EXECUTE converter.sh (RUNTIME - happens NOW)                │
+│     ├─→ converter reads BuildConfig YAMLs                       │
+│     ├─→ converter extracts fields with yq                       │
+│     ├─→ converter generates Helm values                         │
+│     ├─→ converter calls: helm template                          │
+│     └─→ converter outputs Shipwright Build YAML to stdout      │
+│  4. Kustomize captures stdout                                   │
+│  5. Apply patches (remove BuildConfigs)                         │
+│  6. Output final YAML                                           │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  output/output.yaml (contains Shipwright Builds)                │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+**Key Point:** Conversion happens **at `crane apply` time**, NOT during stage creation.
+
+**Benefits:**
+- ✅ No pre-generation needed
+- ✅ Always uses latest BuildConfig data
+- ✅ crane apply controls entire workflow
+- ✅ Repeatable and deterministic
+- ✅ Easy to test (just run kustomize build)
 
 ## Prerequisites
 
@@ -492,41 +504,33 @@ cp ~/buildconfig-migration/converter.sh .
 chmod +x converter.sh
 ```
 
-Create kustomization.yaml using Kustomize exec plugin pattern:
+Create kustomization.yaml that calls converter.sh **at runtime** (during `kustomize build`):
 
 **Prompt to Claude Code:**
 
 ```
 Create kustomization.yaml for crane transform stage that:
-1. Uses resources from resources/ directory
-2. Runs converter.sh as a generator
-3. Removes BuildConfig resources from final output
+1. Runs converter.sh as a Kustomize generator (at kustomize build time)
+2. Converter script reads BuildConfig YAMLs and outputs Shipwright Builds
+3. Removes original BuildConfig resources from final output
 
-Use Kustomize exec plugin pattern or generator approach.
+The generator MUST execute during kustomize build (crane apply), NOT pre-generated.
+
+Use Kustomize generators with exec plugin or helm chart plugin.
 ```
 
-**Expected kustomization.yaml:**
+**Option A: Exec Generator (Recommended)**
 
+Create `kustomization.yaml`:
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Base resources (will be filtered)
-resources:
-- resources/buildconfig-demo/
-
-# Generate Shipwright Builds from BuildConfigs
+# Generate Shipwright Builds at kustomize build time
 generators:
-- |-
-  apiVersion: builtin
-  kind: ExecGenerator
-  metadata:
-    name: buildconfig-converter
-  command: ./converter.sh
-  args:
-  - resources/buildconfig-demo/*BuildConfig*.yaml
+- generator-config.yaml
 
-# Remove BuildConfigs from output
+# Remove BuildConfigs from output (optional - generator can skip them)
 patches:
 - target:
     kind: BuildConfig
@@ -538,63 +542,164 @@ patches:
       name: not-used
 ```
 
-**Alternative approach using simple shell generator:**
+Create `generator-config.yaml`:
+```yaml
+apiVersion: someteam.example.com/v1
+kind: ShipwrightGenerator
+metadata:
+  name: buildconfig-to-shipwright
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ./converter.sh
+# Kustomize will execute converter.sh and use its stdout
+```
+
+**Option B: Inline Exec Generator**
 
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Generated Builds will be in builds/ directory
-resources:
-- builds/
-
-# Custom generator runs converter
 generators:
-- generator.yaml
+- |-
+  apiVersion: builtin
+  kind: ExecGenerator
+  metadata:
+    name: buildconfig-converter
+    annotations:
+      config.kubernetes.io/function: |
+        exec:
+          path: ./converter.sh
+          args:
+          - resources/buildconfig-demo
+
+# Remove BuildConfigs
+patches:
+- target:
+    kind: BuildConfig
+  patch: |-
+    $patch: delete
+    apiVersion: build.openshift.io/v1
+    kind: BuildConfig
+    metadata:
+      name: not-used
 ```
 
-And `generator.yaml`:
+**Option C: Helm Chart Plugin (Direct Helm Integration)**
+
 ```yaml
-apiVersion: kustomize.config.k8s.io/v1alpha1
-kind: ShellScript
-metadata:
-  name: buildconfig-to-shipwright
-script: |
-  #!/bin/bash
-  ./converter.sh resources/buildconfig-demo/*BuildConfig*.yaml > builds/generated-builds.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Use Kustomize Helm chart generator
+helmCharts:
+- name: buildconfig-to-shipwright
+  repo: file://./helm-chart/buildconfig-to-shipwright
+  version: 1.0.0
+  releaseName: converted
+  valuesInline:
+    # Values would need to be populated from BuildConfig
+    # This approach requires pre-processing to extract values
+  
+# Note: Helm chart plugin is less flexible for dynamic per-resource conversion
 ```
+
+**Recommended: Option A with External Generator Config**
+
+This provides clean separation and Kustomize will execute the script **only during build**.
 
 ### Step 6: Test Conversion Locally
+
+**Important:** Test that converter runs **at kustomize build time**, not before.
 
 ```bash
 cd transform/20_BuildConfigConversion
 
-# Test converter script directly
+# Optional: Test converter script standalone (for debugging only)
 ./converter.sh resources/buildconfig-demo/*BuildConfig*.yaml
+# This validates converter logic, but we won't save this output
 
-# Should output Shipwright Build YAML
-
-# Test with Kustomize
-kustomize build .
+# Test RUNTIME generation with Kustomize
+# This is what crane apply will do - generator runs NOW
+kustomize build --enable-alpha-plugins --enable-exec .
 
 # Verify output contains Builds, not BuildConfigs
-kustomize build . | grep "^kind:"
+kustomize build --enable-alpha-plugins --enable-exec . | grep "^kind:"
 # Should show: Build (not BuildConfig)
+
+# Verify converter is called during build (not reading pre-generated file)
+# Run multiple times - should generate fresh each time
+kustomize build --enable-alpha-plugins --enable-exec . | grep "metadata:" | head -5
 ```
 
-### Step 7: Run Crane Apply
+**What happens:**
+1. `kustomize build` reads kustomization.yaml
+2. Sees generator configuration
+3. **Executes converter.sh** at that moment
+4. Captures stdout (Shipwright Build YAML)
+5. Includes generated resources in output
+6. Applies patches (removes BuildConfigs)
+
+**Debugging:**
+```bash
+# Enable debug to see generator execution
+KUSTOMIZE_PLUGIN_DEBUG=true kustomize build --enable-alpha-plugins --enable-exec .
+
+# Should show: "Running generator: converter.sh"
+```
+
+### Step 7: Run Crane Apply (Runtime Generation)
 
 ```bash
 # Go back to migration root
 cd ~/buildconfig-migration
 
-# Generate final output (runs Kustomize on all stages)
+# crane apply runs kustomize build on ALL stages
+# Including our BuildConfigConversion stage which calls converter.sh
 crane apply
+
+# What happens internally:
+# 1. crane apply processes each stage with kustomize build
+# 2. For transform/20_BuildConfigConversion/:
+#    - kustomize reads kustomization.yaml
+#    - sees generator configuration
+#    - EXECUTES converter.sh (runtime!)
+#    - converter reads BuildConfigs
+#    - converter calls helm template
+#    - converter outputs Shipwright Builds to stdout
+#    - kustomize captures output
+# 3. crane merges all stages → output/output.yaml
 
 # Check output
 grep "kind: Build" output/output.yaml
+# Should show Shipwright Builds
+
 grep "kind: BuildConfig" output/output.yaml
-# BuildConfig should NOT appear
+# Should be empty (BuildConfigs removed by patch)
+
+# Verify conversion metadata
+grep "crane.konveyor.io/conversion-method" output/output.yaml
+# Should show: kustomize-helm
+```
+
+**Verify Runtime Behavior:**
+
+Run `crane apply` multiple times - each time converter.sh executes fresh:
+
+```bash
+# First run
+crane apply
+grep "crane.konveyor.io/conversion-date" output/output.yaml
+
+# Modify a BuildConfig (change image tag)
+yq eval '.spec.output.to.name = "quay.io/example/nodejs-app:v2"' \
+  -i transform/10_KubernetesPlugin/resources/buildconfig-demo/BuildConfig*nodejs*.yaml
+
+# Second run - should see updated image in Build
+crane apply
+grep "output:" -A 2 output/output.yaml | grep "image:"
+# Should show: v2 tag (proves fresh generation)
 ```
 
 ### Step 8: Deploy to Target Cluster
@@ -628,26 +733,33 @@ EOF
 kubectl get buildrun -n buildconfig-demo -w
 ```
 
-## Alternative Implementation: Pre-generate During Transform
+## Important: Runtime Generation Only
 
-Instead of generating during `crane apply`, generate during `crane transform`:
+**Do NOT pre-generate builds!** The conversion must happen at **`crane apply` time** when Kustomize evaluates the generators.
 
-```bash
-# In transform/20_BuildConfigConversion/
+**Why?**
+- Ensures fresh conversion every time
+- crane apply controls the entire workflow
+- Kustomize generators are evaluated at build time
+- No manual steps between transform creation and apply
 
-# Run converter once during transform creation
-./converter.sh resources/buildconfig-demo/*BuildConfig*.yaml > builds/generated-builds.yaml
+**Correct Flow:**
+```
+crane apply
+  → kustomize build transform/20_BuildConfigConversion/
+    → evaluates generators in kustomization.yaml
+      → executes converter.sh (reads BuildConfigs)
+        → calls helm template
+          → generates Shipwright Builds
+    → merges with other resources
+  → outputs final YAML
+```
 
-# Simple kustomization.yaml
-cat > kustomization.yaml <<'EOF'
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-- builds/generated-builds.yaml
-EOF
-
-# crane apply will just use pre-generated builds
+**Incorrect Flow (Don't do this):**
+```
+# WRONG - Don't pre-generate!
+./converter.sh ... > builds/generated-builds.yaml  # ❌
+crane apply  # Just uses stale pre-generated file
 ```
 
 ## Conversion Validation

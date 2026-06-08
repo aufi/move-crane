@@ -123,23 +123,39 @@ crane apply
 
 ## How It Works
 
-### Conversion Flow
+### Runtime Generation Flow
+
+**IMPORTANT:** Conversion happens **at `crane apply` time**, NOT during stage setup.
 
 ```
-BuildConfig YAML
+crane apply
     ↓
-converter.sh (extracts fields with yq)
+kustomize build transform/20_BuildConfigConversion/
     ↓
-Helm values.yaml (BuildConfig fields)
+Reads kustomization.yaml → sees generator
     ↓
-helm template (generates Shipwright Build)
+EXECUTES converter.sh (RUNTIME - happens NOW!)
     ↓
-Shipwright Build YAML
+converter.sh reads BuildConfig YAMLs
     ↓
-Kustomize (includes in final output)
+converter.sh extracts fields with yq
     ↓
-crane apply (deploys to target)
+converter.sh generates Helm values
+    ↓
+converter.sh calls: helm template
+    ↓
+converter.sh outputs Shipwright Build YAML to stdout
+    ↓
+Kustomize captures stdout
+    ↓
+Kustomize applies patches (removes BuildConfigs)
+    ↓
+Kustomize outputs final YAML
+    ↓
+crane apply merges all stages → output/output.yaml
 ```
+
+**Key Point:** Generator executes **during kustomize build**, ensuring fresh conversion every time.
 
 ### Field Mapping
 
@@ -288,7 +304,9 @@ spec:
 
 ## Integration with Crane
 
-### Manual Stage Creation
+### Manual Stage Creation (Runtime Generation)
+
+**IMPORTANT:** Configure Kustomize to call converter.sh **at runtime**, NOT pre-generate!
 
 ```bash
 # After crane transform KubernetesPlugin
@@ -300,21 +318,53 @@ cd 20_BuildConfigConversion/
 cp -r ../10_KubernetesPlugin/resources .
 cp -r /path/to/playground/buildconfig-kustomize-converter/helm-chart .
 cp /path/to/playground/buildconfig-kustomize-converter/scripts/converter.sh .
+chmod +x converter.sh
 
-# Convert
-./converter.sh resources/*BuildConfig*.yaml > builds/generated-builds.yaml
+# Create generator configuration (NOT pre-generated builds!)
+cat > generator-config.yaml <<'EOF'
+apiVersion: someteam.example.com/v1
+kind: ShipwrightGenerator
+metadata:
+  name: buildconfig-converter
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ./converter.sh
+        args:
+        - resources
+EOF
 
-# Kustomize
-echo 'resources:
-- builds/generated-builds.yaml' > kustomization.yaml
+# Create kustomization.yaml that uses generator
+cat > kustomization.yaml <<'EOF'
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 
-# Test
-kustomize build .
+generators:
+- generator-config.yaml
+
+patches:
+- target:
+    kind: BuildConfig
+  patch: |-
+    $patch: delete
+    apiVersion: build.openshift.io/v1
+    kind: BuildConfig
+    metadata:
+      name: not-used
+EOF
+
+# Test RUNTIME generation
+kustomize build --enable-alpha-plugins --enable-exec .
+# converter.sh executes NOW and outputs Builds
+
+# crane apply will execute converter.sh again (runtime!)
+cd ../..
+crane apply
 ```
 
-### Automated with Script
+### Automated with Script (Runtime Generation)
 
-Create helper script for stage creation:
+Create helper script for stage creation with **runtime generator**:
 
 ```bash
 #!/bin/bash
@@ -332,19 +382,41 @@ cp -r "$CONVERTER_DIR/helm-chart" .
 cp "$CONVERTER_DIR/scripts/converter.sh" .
 chmod +x converter.sh
 
-# Convert
-mkdir -p builds
-./converter.sh resources/*BuildConfig*.yaml > builds/generated-builds.yaml
+# Create generator config (NOT pre-generated builds!)
+cat > generator-config.yaml <<'EOF'
+apiVersion: someteam.example.com/v1
+kind: ShipwrightGenerator
+metadata:
+  name: buildconfig-converter
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ./converter.sh
+        args:
+        - resources
+EOF
 
-# Kustomization
+# Kustomization with generator
 cat > kustomization.yaml <<'EOF'
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-- builds/generated-builds.yaml
+
+generators:
+- generator-config.yaml
+
+patches:
+- target:
+    kind: BuildConfig
+  patch: |-
+    $patch: delete
+    apiVersion: build.openshift.io/v1
+    kind: BuildConfig
+    metadata:
+      name: not-used
 EOF
 
-echo "Stage created: $STAGE_DIR"
+echo "Stage created: $STAGE_DIR (with runtime generator)"
+echo "Run: crane apply (converter will execute at that time)"
 ```
 
 ## Testing
