@@ -101,22 +101,43 @@ cp -r /path/to/playground/buildconfig-kustomize-converter/helm-chart .
 cp /path/to/playground/buildconfig-kustomize-converter/scripts/converter.sh .
 chmod +x converter.sh
 
-# Generate Builds
-mkdir -p builds
-./converter.sh resources/myapp/*BuildConfig*.yaml > builds/generated-builds.yaml
+# Create generator configuration for RUNTIME execution
+cat > generator-config.yaml <<'EOF'
+apiVersion: someteam.example.com/v1
+kind: ShipwrightGenerator
+metadata:
+  name: buildconfig-converter
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ./converter.sh
+        args:
+        - resources
+EOF
 
-# Create kustomization.yaml
+# Create kustomization.yaml with GENERATOR (not pre-generated resources)
 cat > kustomization.yaml <<'EOF'
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-- builds/generated-builds.yaml
+
+generators:
+- generator-config.yaml
+
+patches:
+- target:
+    kind: BuildConfig
+  patch: |-
+    $patch: delete
+    apiVersion: build.openshift.io/v1
+    kind: BuildConfig
+    metadata:
+      name: not-used
 EOF
 
-# Test
-kustomize build .
+# Test RUNTIME generation
+kustomize build --enable-alpha-plugins --enable-exec .
 
-# Go back and apply
+# Go back and apply (converter.sh will execute again at runtime)
 cd ../..
 crane apply
 ```
@@ -499,11 +520,14 @@ bash -x scripts/converter.sh samples/buildconfig-docker.yaml
 # Check BuildConfig files exist
 ls -la resources/*BuildConfig*.yaml
 
-# Run converter manually
+# Test converter manually (for debugging only)
 scripts/converter.sh resources/*BuildConfig*.yaml
 
-# Check output
-cat builds/generated-builds.yaml
+# Verify generator configuration
+cat generator-config.yaml
+
+# Test runtime execution with debug
+KUSTOMIZE_PLUGIN_DEBUG=true kustomize build --enable-alpha-plugins --enable-exec .
 ```
 
 ## Extending the Converter
@@ -569,18 +593,21 @@ Add conditional logic in Helm template:
 
 1. **Test Helm chart first** - Independent of converter
 2. **Validate BuildConfigs** - Before running converter
-3. **Pre-generate builds** - During stage creation, not at apply time
+3. **Use runtime generation** - Configure generators, NOT pre-generated resources
 4. **Version control** - Track Helm chart and scripts in git
 5. **Document mappings** - Clear field conversion reference
+6. **Test with --enable-alpha-plugins** - Verify generator execution works
 
 ## Resources
 
-- **Scenario 06:** ../test-day-june2026/scenario-06-buildconfig-kustomize-conversion.md
+- **Quick Start:** QUICK-START.md - Fast setup guide
+- **Scenario 06:** ../../test-day-june2026/scenario-06-buildconfig-kustomize-conversion.md
+- **Sample Stage:** samples/test-stage/ - Working example
 - **Shipwright:** https://shipwright.io/
 - **Helm:** https://helm.sh/
 - **yq:** https://github.com/mikefarah/yq
-- **Kustomize:** https://kustomize.io/
+- **Kustomize Generators:** https://kubectl.docs.kubernetes.io/references/kustomize/builtins/
 
 ---
 
-**Status:** Working prototype for Kustomize-based conversion 🚀
+**Status:** Working prototype with runtime generation 🚀

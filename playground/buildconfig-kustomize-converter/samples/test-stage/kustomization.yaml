@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# This kustomization demonstrates RUNTIME generation
+# Converter.sh executes during 'kustomize build', not before
+
+# Generator configuration
+generators:
+- generator-config.yaml
+
+# Optional: Remove BuildConfigs from output
+# (converter.sh could also just skip outputting them)
+patches:
+- target:
+    kind: BuildConfig
+  patch: |-
+    $patch: delete
+    apiVersion: build.openshift.io/v1
+    kind: BuildConfig
+    metadata:
+      name: not-used

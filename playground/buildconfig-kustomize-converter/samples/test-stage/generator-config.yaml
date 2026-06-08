@@ -1,0 +1,22 @@
+apiVersion: someteam.example.com/v1
+kind: ShipwrightGenerator
+metadata:
+  name: buildconfig-to-shipwright
+  annotations:
+    # Kustomize exec plugin configuration
+    config.kubernetes.io/function: |
+      exec:
+        path: ../../scripts/converter.sh
+        args:
+        - ../buildconfig-docker.yaml
+        - ../buildconfig-source.yaml
+
+# This configuration tells Kustomize to:
+# 1. Execute converter.sh during kustomize build
+# 2. Pass BuildConfig files as arguments
+# 3. Capture stdout as generated resources
+# 4. Include in final output
+
+# Runtime execution happens when:
+# - kustomize build --enable-alpha-plugins --enable-exec .
+# - crane apply (which calls kustomize build internally)
