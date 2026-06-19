@@ -14,8 +14,6 @@ transform/
 ├── 10_KubernetesPlugin/
 │   ├── resources/          # ❓ confusing - unclear that this is input
 │   ├── patches/
-│   ├── whiteouts/
-│   ├── reports/
 │   └── kustomization.yaml  # references: resources/
 └── .work/                  # ❌ hidden, users don't go here
     └── 10_KubernetesPlugin/
@@ -29,23 +27,36 @@ transform/
 transform/
 └── 10_KubernetesPlugin/
     ├── input-resources/    # ✅ clear - input resources for stage
-    ├── patches/
-    ├── whiteouts/
-    ├── reports/
+    ├── patches/            # patches applied to input-resources
+    # ├── new-resources/    # (future) resources created by plugin (not in input)
     ├── output/             # ✅ clear - stage output (materialized)
-    └── kustomization.yaml  # references: input-resources/
+    └── kustomization.yaml  # references: input-resources/ (and new-resources/ in future)
 ```
+
+**Note on directory naming:** The names `input-resources/` and `new-resources/` (future) are chosen for maximum clarity. However, if user feedback indicates preference for shorter names, these can be changed to `input/` and `new/` respectively. The implementation should make this renaming trivial (constants or helper methods).
 
 ## Code Changes
 
 ### 1. `internal/file/file_helper.go`
+
+#### Directory name constants:
+
+```go
+// Consider adding constants for easy renaming if requested by users:
+const (
+    InputResourcesDirName = "input-resources"  // could be changed to "input" if preferred
+    NewResourcesDirName   = "new-resources"    // (future) could be changed to "new" if preferred
+    PatchesDirName        = "patches"
+    OutputDirName         = "output"
+)
+```
 
 #### Modify methods:
 
 ```go
 // GetResourcesDir - RENAME to GetInputResourcesDir
 func (opts *PathOpts) GetInputResourcesDir(stageName string) string {
-    return filepath.Join(opts.GetStageDir(stageName), "input-resources")
+    return filepath.Join(opts.GetStageDir(stageName), InputResourcesDirName)
 }
 
 // GetResourceTypeFilePath - UPDATE to use input-resources
@@ -62,7 +73,16 @@ func (opts *PathOpts) GetStageOutputDir(stageName string) string {
 // OR keep as alias to GetInputResourcesDir for backward compatibility in tests
 ```
 
-#### New/modified methods:
+#### Remove unused directory methods:
+
+```go
+// GetWhiteoutsDir - REMOVE (not used, whiteouts tracked in kustomization.yaml comments)
+// GetReportsDir - REMOVE (not used)
+// GetWhiteoutReportPath - REMOVE (not used)
+// GetIgnoredPatchReportPath - REMOVE (not used)
+```
+
+#### Deprecated methods to remove:
 
 ```go
 // GetStageWorkDir - REMOVE (no longer using .work/)
@@ -241,6 +261,42 @@ sed -i 's/resources\//input-resources\//g' kustomization.yaml
 3. ✅ **No hidden directories**: Everything in stage directory, nothing in `.work/`
 4. ✅ **Better debugging**: `diff input-resources/ output/` shows what the stage changed
 5. ✅ **Simpler mental model**: Everything in one place
+6. ✅ **Future-proof**: Structure supports `new-resources/` for plugin-created resources (future implementation)
+
+## Future Enhancement: new-resources/ Directory
+
+**Related Issue:** [#415 - Support new resources in transform plugins](https://github.com/migtools/crane/issues/415)
+
+**Note:** This refactoring prepares the structure for a future feature where plugins can create new resources (not just patch existing ones).
+
+### Planned Usage:
+
+```
+transform/
+└── 20_OpenshiftPlugin/
+    ├── input-resources/    # resources from previous stage (or export)
+    ├── patches/            # modifications to input-resources
+    ├── new-resources/      # (future) resources created from scratch by plugin
+    │   └── Route_route.openshift.io_v1_default_myapp.yaml
+    ├── output/             # combined result: input-resources + patches + new-resources
+    └── kustomization.yaml  # references both input-resources/ and new-resources/
+```
+
+### Example Use Cases:
+
+1. **OpenshiftPlugin** creating Routes for Services
+2. **SecurityPlugin** creating NetworkPolicies or PodSecurityPolicies
+3. **ObservabilityPlugin** creating ServiceMonitors or PrometheusRules
+4. **Custom stages** adding ConfigMaps, Secrets, or other resources
+
+### Implementation Notes (for future):
+
+- `new-resources/` would be listed separately in `kustomization.yaml` resources
+- Plugins would indicate new resources via a flag in `TransformArtifact`
+- Writer would separate new resources from patched resources
+- Output would include both transformed input-resources and new-resources
+
+This refactoring does NOT implement `new-resources/` - it only ensures the directory structure can accommodate it later without another breaking change.
 
 ## Risks and Mitigation
 
@@ -278,6 +334,12 @@ sed -i 's/resources\//input-resources\//g' kustomization.yaml
    - **Decision:** YES - it's useful for code review and debugging
    - Exception: User can add to .gitignore if they don't want it
 
+5. **Use `input-resources/` and `new-resources/` or shorter `input/` and `new/`?**
+   - Pro (longer names): Maximum clarity, immediately obvious what they contain
+   - Pro (shorter names): Less verbose, cleaner tree output
+   - **Decision:** Start with `input-resources/` and `new-resources/` for clarity
+   - Use constants to make future renaming trivial if user feedback prefers shorter names
+
 ## Example of New Structure After Transform
 
 ```
@@ -290,6 +352,8 @@ transform/
 │   │       └── ClusterRole_rbac.authorization.k8s.io_v1_clusterscoped_myrole.yaml
 │   ├── patches/                       # ← transformations
 │   │   └── deployment_myapp_default.yaml
+│   # ├── new-resources/               # (future) new resources created by plugin
+│   #     └── ServiceAccount_v1_default_myapp-sa.yaml
 │   ├── output/                        # ← output (materialized after kustomize)
 │   │   ├── default/
 │   │   │   └── Deployment_apps_v1_default_myapp.yaml  # (with patches applied)
@@ -305,6 +369,8 @@ transform/
     │       └── ClusterRole_rbac.authorization.k8s.io_v1_clusterscoped_myrole.yaml
     ├── patches/
     │   └── deployment_myapp_default.yaml
+    # ├── new-resources/               # (future) e.g., Route created by OpenshiftPlugin
+    #     └── Route_route.openshift.io_v1_default_myapp.yaml
     ├── output/
     │   └── ...
     └── kustomization.yaml
