@@ -26,14 +26,14 @@ transform/
 ```
 transform/
 └── 10_KubernetesPlugin/
-    ├── input-resources/    # ✅ clear - input resources for stage
-    ├── patches/            # patches applied to input-resources
-    # ├── new-resources/    # (future) resources created by plugin (not in input)
+    ├── input/              # ✅ clear - input resources for stage
+    ├── patches/            # patches applied to input
+    # ├── new/              # (future) resources created by plugin (not in input)
     ├── output/             # ✅ clear - stage output (materialized)
-    └── kustomization.yaml  # references: input-resources/ (and new-resources/ in future)
+    └── kustomization.yaml  # references: input/ (and new/ in future)
 ```
 
-**Note on directory naming:** The names `input-resources/` and `new-resources/` (future) are chosen for maximum clarity. However, if user feedback indicates preference for shorter names, these can be changed to `input/` and `new/` respectively. The implementation should make this renaming trivial (constants or helper methods).
+**Note on directory naming:** The names `input/` and `new/` (future) are chosen for brevity while remaining clear. The implementation uses constants to make renaming trivial if longer names like `input-resources/` and `new-resources/` are preferred.
 
 ## Code Changes
 
@@ -42,35 +42,34 @@ transform/
 #### Directory name constants:
 
 ```go
-// Consider adding constants for easy renaming if requested by users:
+// Add constants for easy renaming if requested by users:
 const (
-    InputResourcesDirName = "input-resources"  // could be changed to "input" if preferred
-    NewResourcesDirName   = "new-resources"    // (future) could be changed to "new" if preferred
-    PatchesDirName        = "patches"
-    OutputDirName         = "output"
+    InputDirName   = "input"    // could be changed to "input-resources" if preferred
+    NewDirName     = "new"      // (future) could be changed to "new-resources" if preferred
+    PatchesDirName = "patches"
+    OutputDirName  = "output"
 )
 ```
 
 #### Modify methods:
 
 ```go
-// GetResourcesDir - RENAME to GetInputResourcesDir
-func (opts *PathOpts) GetInputResourcesDir(stageName string) string {
-    return filepath.Join(opts.GetStageDir(stageName), InputResourcesDirName)
+// GetResourcesDir - RENAME to GetInputDir
+func (opts *PathOpts) GetInputDir(stageName string) string {
+    return filepath.Join(opts.GetStageDir(stageName), InputDirName)
 }
 
-// GetResourceTypeFilePath - UPDATE to use input-resources
+// GetResourceTypeFilePath - UPDATE to use input
 func (opts *PathOpts) GetResourceTypeFilePath(stageName, filename string) string {
-    return filepath.Join(opts.GetInputResourcesDir(stageName), filename)
+    return filepath.Join(opts.GetInputDir(stageName), filename)
 }
 
 // GetStageOutputDir - CHANGE path from .work/<stage>/output to <stage>/output
 func (opts *PathOpts) GetStageOutputDir(stageName string) string {
-    return filepath.Join(opts.GetStageDir(stageName), "output")
+    return filepath.Join(opts.GetStageDir(stageName), OutputDirName)
 }
 
-// GetStageInputDir - REMOVE (not needed, input-resources/ serves this purpose)
-// OR keep as alias to GetInputResourcesDir for backward compatibility in tests
+// GetStageInputDir - REMOVE (not needed, GetInputDir() serves this purpose)
 ```
 
 #### Remove unused directory methods:
@@ -100,17 +99,17 @@ func (opts *PathOpts) GetStageOutputDir(stageName string) string {
 resourcesDir := w.opts.GetResourcesDir(w.stageName)
 
 // To:
-resourcesDir := w.opts.GetInputResourcesDir(w.stageName)
+resourcesDir := w.opts.GetInputDir(w.stageName)
 ```
 
 #### In kustomization.yaml generation:
 
 ```go
-// Change reference from "resources/" to "input-resources/"
-resourcePaths = append(resourcePaths, filepath.Join("input-resources", filename))
+// Change reference from "resources/" to "input/"
+resourcePaths = append(resourcePaths, filepath.Join("input", filename))
 
 // And in whiteout comments:
-whiteoutComments = append(whiteoutComments, fmt.Sprintf("# - input-resources/%s", filename))
+whiteoutComments = append(whiteoutComments, fmt.Sprintf("# - input/%s", filename))
 ```
 
 ### 3. `internal/transform/orchestrator.go`
@@ -119,7 +118,7 @@ whiteoutComments = append(whiteoutComments, fmt.Sprintf("# - input-resources/%s"
 
 **Step 3: Save input snapshot - REMOVE**
 ```go
-// REMOVE this - input-resources/ will serve as the input
+// REMOVE this - input/ will serve as the input
 // Step 3: Save input to working directory for debugging
 stageInputDir := opts.GetStageInputDir(stage.DirName)
 if err := o.writeResourcesToDirectory(inputResources, stageInputDir); err != nil {
@@ -127,7 +126,7 @@ if err := o.writeResourcesToDirectory(inputResources, stageInputDir); err != nil
 }
 ```
 
-**Reason:** Writer already writes resources to `input-resources/`, so we avoid duplication.
+**Reason:** Writer already writes resources to `input/`, so we avoid duplication.
 
 **Step 6: Update output path**
 ```go
@@ -150,7 +149,7 @@ if err := o.writeResourcesToDirectory(outputResources, stageOutputDir); err != n
 - `internal/file/file_helper_test.go`
 
 #### Changes:
-- Update expected paths from `resources/` to `input-resources/`
+- Update expected paths from `resources/` to `input/`
 - Update expected paths from `.work/<stage>/output` to `<stage>/output`
 - Remove tests relying on `.work/<stage>/input`
 
@@ -166,7 +165,7 @@ if err := o.writeResourcesToDirectory(outputResources, stageOutputDir); err != n
 
 #### Changes:
 - Update all directory structure examples
-- Explain new meaning of `input-resources/` vs `output/`
+- Explain new meaning of `input/` vs `output/`
 - Remove mentions of `.work/` directory
 - Update debugging guides
 
@@ -245,8 +244,8 @@ crane transform --force
 **Option 2: Manual migration**
 ```bash
 cd transform/10_KubernetesPlugin/
-mv resources input-resources
-sed -i 's/resources\//input-resources\//g' kustomization.yaml
+mv resources input
+sed -i 's/resources\//input\//g' kustomization.yaml
 ```
 
 **Option 3: Automatic migration**
@@ -256,12 +255,13 @@ sed -i 's/resources\//input-resources\//g' kustomization.yaml
 
 ## Benefits of New Structure
 
-1. ✅ **Clear input**: `input-resources/` - users immediately know this is input
+1. ✅ **Clear input**: `input/` - users immediately know this is input
 2. ✅ **Clear output**: `output/` - visible result of stage
 3. ✅ **No hidden directories**: Everything in stage directory, nothing in `.work/`
-4. ✅ **Better debugging**: `diff input-resources/ output/` shows what the stage changed
+4. ✅ **Better debugging**: `diff input/ output/` shows what the stage changed
 5. ✅ **Simpler mental model**: Everything in one place
-6. ✅ **Future-proof**: Structure supports `new-resources/` for plugin-created resources (future implementation)
+6. ✅ **Concise naming**: Short directory names, cleaner tree output
+7. ✅ **Future-proof**: Structure supports `new/` for plugin-created resources (future implementation)
 
 ## Future Enhancement: new-resources/ Directory
 
@@ -274,12 +274,12 @@ sed -i 's/resources\//input-resources\//g' kustomization.yaml
 ```
 transform/
 └── 20_OpenshiftPlugin/
-    ├── input-resources/    # resources from previous stage (or export)
-    ├── patches/            # modifications to input-resources
-    ├── new-resources/      # (future) resources created from scratch by plugin
+    ├── input/              # resources from previous stage (or export)
+    ├── patches/            # modifications to input
+    ├── new/                # (future) resources created from scratch by plugin
     │   └── Route_route.openshift.io_v1_default_myapp.yaml
-    ├── output/             # combined result: input-resources + patches + new-resources
-    └── kustomization.yaml  # references both input-resources/ and new-resources/
+    ├── output/             # combined result: input + patches + new
+    └── kustomization.yaml  # references both input/ and new/
 ```
 
 ### Example Use Cases:
@@ -291,12 +291,12 @@ transform/
 
 ### Implementation Notes (for future):
 
-- `new-resources/` would be listed separately in `kustomization.yaml` resources
+- `new/` would be listed separately in `kustomization.yaml` resources
 - Plugins would indicate new resources via a flag in `TransformArtifact`
 - Writer would separate new resources from patched resources
-- Output would include both transformed input-resources and new-resources
+- Output would include both transformed input and new resources
 
-This refactoring does NOT implement `new-resources/` - it only ensures the directory structure can accommodate it later without another breaking change.
+This refactoring does NOT implement `new/` - it only ensures the directory structure can accommodate it later without another breaking change.
 
 ## Risks and Mitigation
 
@@ -334,25 +334,25 @@ This refactoring does NOT implement `new-resources/` - it only ensures the direc
    - **Decision:** YES - it's useful for code review and debugging
    - Exception: User can add to .gitignore if they don't want it
 
-5. **Use `input-resources/` and `new-resources/` or shorter `input/` and `new/`?**
+5. **Use `input/` and `new/` or longer `input-resources/` and `new-resources/`?**
+   - Pro (shorter names): Less verbose, cleaner tree output, more concise
    - Pro (longer names): Maximum clarity, immediately obvious what they contain
-   - Pro (shorter names): Less verbose, cleaner tree output
-   - **Decision:** Start with `input-resources/` and `new-resources/` for clarity
-   - Use constants to make future renaming trivial if user feedback prefers shorter names
+   - **Decision:** Start with `input/` and `new/` for brevity
+   - Use constants to make renaming to longer names trivial if user feedback prefers more verbosity
 
 ## Example of New Structure After Transform
 
 ```
 transform/
 ├── 10_KubernetesPlugin/
-│   ├── input-resources/               # ← input (e.g., from export/)
+│   ├── input/                         # ← input (e.g., from export/)
 │   │   ├── default/
 │   │   │   └── Deployment_apps_v1_default_myapp.yaml
 │   │   └── _cluster/
 │   │       └── ClusterRole_rbac.authorization.k8s.io_v1_clusterscoped_myrole.yaml
 │   ├── patches/                       # ← transformations
 │   │   └── deployment_myapp_default.yaml
-│   # ├── new-resources/               # (future) new resources created by plugin
+│   # ├── new/                         # (future) new resources created by plugin
 │   #     └── ServiceAccount_v1_default_myapp-sa.yaml
 │   ├── output/                        # ← output (materialized after kustomize)
 │   │   ├── default/
@@ -362,14 +362,14 @@ transform/
 │   └── kustomization.yaml
 │
 └── 20_OpenshiftPlugin/
-    ├── input-resources/               # ← input (= output from previous stage!)
+    ├── input/                         # ← input (= output from previous stage!)
     │   ├── default/
     │   │   └── Deployment_apps_v1_default_myapp.yaml  # (already has patches from stage 1)
     │   └── _cluster/
     │       └── ClusterRole_rbac.authorization.k8s.io_v1_clusterscoped_myrole.yaml
     ├── patches/
     │   └── deployment_myapp_default.yaml
-    # ├── new-resources/               # (future) e.g., Route created by OpenshiftPlugin
+    # ├── new/                         # (future) e.g., Route created by OpenshiftPlugin
     #     └── Route_route.openshift.io_v1_default_myapp.yaml
     ├── output/
     │   └── ...
