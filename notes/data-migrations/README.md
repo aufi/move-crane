@@ -20,16 +20,15 @@ This directory contains comprehensive analysis and recommendations for improving
 
 | Document | Purpose | Key Insights |
 |----------|---------|--------------|
-| **[VERIFICATION_REPORT.md](VERIFICATION_REPORT.md)** | Verification of features vs PDF spec | ✅ All "Existing" features verified<br>✅ All "Extension" features correctly marked missing |
 | **[TRANSFER_PVC_RECOMMENDATIONS.md](TRANSFER_PVC_RECOMMENDATIONS.md)** | Code analysis & improvement roadmap | 🔴 17 critical `log.Fatal` issues<br>🟡 Missing optimization flags<br>🟢 Quick wins identified |
 | **[BACKUBE_COMPARISON.md](BACKUBE_COMPARISON.md)** | Analysis of backube org projects | 📚 pvc-transfer unmaintained since 2022<br>🔄 VolSync mover patterns adaptable<br>⚡ rclone recommended |
 | **[RSYNC_RCLONE_RESTIC_COMPARISON.md](RSYNC_RCLONE_RESTIC_COMPARISON.md)** | Technology comparison | rsync vs rclone vs restic<br>✅ Keep rsync, add rclone<br>❌ Skip restic (backup tool) |
 | **[SIMPLE_JOB_PROPOSAL.md](SIMPLE_JOB_PROPOSAL.md)** | In-cluster execution without operator | 🎯 **Recommended approach**<br>Use Kubernetes Job/CronJob<br>No operator needed |
 | **[STATEFUL_FLOW.md](STATEFUL_FLOW.md)** | ⭐ **Complete stateful migration workflow** | 🎓 **START HERE for migrations**<br>Discovery → Transfer → Cutover<br>All kubectl commands included |
 | **[IN_CLUSTER_TRANSFER_PROPOSAL.md](IN_CLUSTER_TRANSFER_PROPOSAL.md)** | Full operator-based proposal | ⚠️ NOT recommended<br>Too complex for migration tool<br>Reference only |
-| **[data-migration-summary.pdf](data-migration-summary.pdf)** | Original requirements spec | Source document<br>8 Existing + 7 Extension features |
 | **[RCLONE_IMPLEMENTATION_NOTES.md](RCLONE_IMPLEMENTATION_NOTES.md)** | 🔧 How rclone would work vs rsync | Technical deep-dive<br>Pod architecture<br>Implementation guide |
 | **[STUNNEL_SETUP_DETAILS.md](STUNNEL_SETUP_DETAILS.md)** | 🔐 How TLS tunnel is established | Certificate generation<br>mTLS handshake<br>Security details |
+| **[RSYNC_PERMISSIONS_ISSUE.md](RSYNC_PERMISSIONS_ISSUE.md)** | ⚠️ How to fix permission denied errors | Files with 0700 perms<br>FSGroup solution<br>Non-root rsync |
 
 ---
 
@@ -519,9 +518,7 @@ kubectl apply -f job.yaml
 
 ### Phase 5: Extension Features (3 weeks) 🔄
 
-**Goal:** Implement missing features from data-migration-summary.pdf
-
-See [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) for current status.
+**Goal:** Implement missing extension features
 
 #### 5.1 B1.2: Incremental Sync with Cutover
 
@@ -720,7 +717,7 @@ crane transfer-pvc \
 ### Sprint 5-7: Extension Features (3 weeks)
 
 **Goals:**
-- ✅ Feature parity with data-migration-summary.pdf
+- ✅ Implement all extension features
 
 **Tasks:**
 1. B1.2: Incremental sync (CronJob approach)
@@ -789,9 +786,8 @@ crane transfer-pvc \
 
 ### For Planning
 
-1. Read [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) - Current state
-2. Read [TRANSFER_PVC_RECOMMENDATIONS.md](TRANSFER_PVC_RECOMMENDATIONS.md) - Detailed analysis
-3. Use this README for implementation roadmap
+1. Read [TRANSFER_PVC_RECOMMENDATIONS.md](TRANSFER_PVC_RECOMMENDATIONS.md) - Detailed analysis
+2. Use this README for implementation roadmap
 
 ### For Implementation
 
@@ -821,11 +817,6 @@ crane transfer-pvc \
 
 - **[SIMPLE_JOB_PROPOSAL.md](SIMPLE_JOB_PROPOSAL.md)** - ✅ RECOMMENDED: Run as Job, no operator
 - **[IN_CLUSTER_TRANSFER_PROPOSAL.md](IN_CLUSTER_TRANSFER_PROPOSAL.md)** - ⚠️ Reference only: Full operator approach (NOT recommended)
-
-### Current State
-
-- **[VERIFICATION_REPORT.md](VERIFICATION_REPORT.md)** - What exists vs what's missing
-- **[data-migration-summary.pdf](data-migration-summary.pdf)** - Original requirements
 
 ---
 
@@ -876,10 +867,10 @@ git clone https://github.com/backube/pvc-transfer
 
 Review the detailed documents in this directory:
 
-- **Verification questions** → See VERIFICATION_REPORT.md
 - **Code improvements** → See TRANSFER_PVC_RECOMMENDATIONS.md
 - **Technology choices** → See BACKUBE_COMPARISON.md or RSYNC_RCLONE_RESTIC_COMPARISON.md
 - **In-cluster execution** → See SIMPLE_JOB_PROPOSAL.md
+- **Migration workflow** → See STATEFUL_FLOW.md
 
 ---
 
