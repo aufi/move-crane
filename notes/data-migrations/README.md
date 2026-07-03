@@ -29,6 +29,12 @@ This directory contains comprehensive analysis and recommendations for improving
 | **[RCLONE_IMPLEMENTATION_NOTES.md](RCLONE_IMPLEMENTATION_NOTES.md)** | 🔧 How rclone would work vs rsync | Technical deep-dive<br>Pod architecture<br>Implementation guide |
 | **[STUNNEL_SETUP_DETAILS.md](STUNNEL_SETUP_DETAILS.md)** | 🔐 How TLS tunnel is established | Certificate generation<br>mTLS handshake<br>Security details |
 | **[RSYNC_PERMISSIONS_ISSUE.md](RSYNC_PERMISSIONS_ISSUE.md)** | ⚠️ How to fix permission denied errors | Files with 0700 perms<br>FSGroup solution<br>Non-root rsync |
+| **[PVC_OFFLINE_EXPORT_IMPORT_PROPOSAL.md](PVC_OFFLINE_EXPORT_IMPORT_PROPOSAL.md)** | 💾 **Offline export/import to cloud storage** | 🆕 Export PVC → S3/GCS/Azure<br>🆕 Import from cloud → PVC<br>💰 Cost savings & DR solution<br>⚡ Uses rclone as Go library |
+| **[PVC_EXPORT_IMPORT_RSYNC_PROPOSAL.md](PVC_EXPORT_IMPORT_RSYNC_PROPOSAL.md)** | 💾 **Alternative: rsync + cloud SDKs** | 🔄 Reuses existing rsync<br>📦 Smaller binary (+10MB vs +40MB)<br>⏱️ Faster to implement (2.5 weeks) |
+| **[PVC_LOCAL_EXPORT_IMPORT.md](PVC_LOCAL_EXPORT_IMPORT.md)** | 💻 **Local export/import to laptop** | 💾 Save to laptop running crane CLI<br>📦 Air-gapped & USB transfer<br>⚡ **Fastest to implement (3 days)** |
+| **[PVC_LOCAL_EXPORT_IMPORT_IMPLEMENTATION_PLAN.md](PVC_LOCAL_EXPORT_IMPORT_IMPLEMENTATION_PLAN.md)** | 📅 **3-day implementation plan** | Detailed hourly breakdown<br>Code examples & tests<br>Bonus: S3 upload guide |
+| **[PVC_EXPLORE_PROPOSAL.md](PVC_EXPLORE_PROPOSAL.md)** | 🔍 **PVC discovery & command generator** | Auto-discover PVCs from export/<br>Generate copy-paste commands<br>**Simple instructions file** - just PVC transfers, no orchestration |
+| **[PVC_EXPORT_IMPORT_SUMMARY.md](PVC_EXPORT_IMPORT_SUMMARY.md)** | 📋 **80-line executive summary** | Quick overview of rclone-based proposal |
 
 ---
 
