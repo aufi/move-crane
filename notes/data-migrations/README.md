@@ -284,6 +284,15 @@ func (pt *progressTracker) Merge(p *Progress) {
 
 **Goal:** Add multi-threaded rclone for 5-10x faster transfers
 
+> **✅ RECOMMENDED APPROACH:** Use rclone as a **Go library dependency** instead of calling external binary
+> 
+> **Why:** rclone is written in Go and can be imported directly into crane, eliminating:
+> - ❌ Need for EPEL on RHEL/CentOS
+> - ❌ External binary dependencies
+> - ❌ Separate container images
+> 
+> **Alternative (if library integration is too complex):** Call rclone as external binary, but note that rclone is **not available in RHEL base repositories** - requires EPEL or building custom images.
+
 #### 3.1 Add Transfer Engine Abstraction
 
 **Create new package structure:**
@@ -329,11 +338,29 @@ const (
 - ✅ Better bandwidth control
 - ✅ Cloud storage support (S3, GCS, Azure)
 - ✅ Better progress reporting
+- ✅ **Written in Go** - can be used as a library!
 
-**Implementation:**
+**Implementation Approach A: Use rclone as Go Library** (RECOMMENDED)
+
+```go
+// go.mod
+require (
+    github.com/rclone/rclone v1.68.2
+)
+```
+
 ```go
 // pkg/transfer/rclone/engine.go
 package rclone
+
+import (
+    "context"
+    "github.com/rclone/rclone/fs"
+    "github.com/rclone/rclone/fs/sync"
+    "github.com/rclone/rclone/fs/operations"
+    rcloneConfig "github.com/rclone/rclone/fs/config"
+    "github.com/rclone/rclone/backend/local"
+)
 
 type RcloneEngine struct {
     SourceClient   client.Client
@@ -346,20 +373,94 @@ type RcloneConfig struct {
     Transfers      int    // Parallel transfers (default: 4)
     Checkers       int    // Parallel checksums (default: 8)
     BandwidthLimit string // e.g., "100M"
-    ConfigSecret   string // For cloud storage
+}
+
+func (r *RcloneEngine) TransferInCluster(ctx context.Context, sourcePath, destPath string) error {
+    // Configure rclone
+    rcloneConfig.SetConfigPath("")  // Use in-memory config
+    
+    // Set global config
+    fs.Config.Transfers = r.Config.Transfers
+    fs.Config.Checkers = r.Config.Checkers
+    if r.Config.BandwidthLimit != "" {
+        fs.Config.BwLimit.Set(r.Config.BandwidthLimit)
+    }
+    
+    // Create local filesystem instances
+    srcFs, err := local.NewFs(ctx, "local", sourcePath, nil)
+    if err != nil {
+        return fmt.Errorf("failed to create source fs: %w", err)
+    }
+    
+    dstFs, err := local.NewFs(ctx, "local", destPath, nil)
+    if err != nil {
+        return fmt.Errorf("failed to create dest fs: %w", err)
+    }
+    
+    // Perform sync (this is what 'rclone sync' does)
+    return sync.Sync(ctx, dstFs, srcFs, false)
 }
 
 func (r *RcloneEngine) CreateSourceMover(...) error {
-    // Create Pod with:
-    // - Source PVC mounted at /source
-    // - Destination PVC mounted at /dest (or rclone config for cloud)
-    // - Command: rclone sync /source /dest --transfers=16 --progress
+    // Create Pod that runs crane binary with rclone engine
+    // crane binary already has rclone compiled in
     
     pod := &corev1.Pod{
         Spec: corev1.PodSpec{
             Containers: []corev1.Container{{
+                Name:  "crane-transfer",
+                Image: "quay.io/konveyor/crane:latest",  // crane with rclone built-in
+                Command: []string{
+                    "crane", "transfer-pvc",
+                    "--engine=rclone",
+                    "--source-path=/mnt/source",
+                    "--dest-path=/mnt/dest",
+                    "--transfers=" + strconv.Itoa(r.Config.Transfers),
+                    "--checkers=" + strconv.Itoa(r.Config.Checkers),
+                },
+                VolumeMounts: []corev1.VolumeMount{
+                    {Name: "source", MountPath: "/mnt/source"},
+                    {Name: "dest", MountPath: "/mnt/dest"},
+                },
+            }},
+            Volumes: []corev1.Volume{
+                {Name: "source", VolumeSource: corev1.VolumeSource{
+                    PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+                        ClaimName: sourcePVC,
+                        ReadOnly:  true,
+                    },
+                }},
+                {Name: "dest", VolumeSource: corev1.VolumeSource{
+                    PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+                        ClaimName: destPVC,
+                    },
+                }},
+            },
+        },
+    }
+    // ... create pod
+}
+```
+
+**Benefits of Library Approach:**
+- ✅ No external binary dependency
+- ✅ No EPEL/RHEL repository issues
+- ✅ Single crane binary contains everything
+- ✅ Easier to control and configure
+- ✅ Better error handling and logging integration
+- ✅ Simpler container images
+
+**Implementation Approach B: Call External rclone Binary** (Fallback)
+
+Only use if library integration proves too complex or incompatible.
+
+```go
+func (r *RcloneEngine) CreateSourceMover(...) error {
+    pod := &corev1.Pod{
+        Spec: corev1.PodSpec{
+            Containers: []corev1.Container{{
                 Name:  "rclone",
-                Image: "rclone/rclone:latest",
+                Image: "rclone/rclone:latest",  // Note: Alpine-based, not RHEL
                 Command: []string{
                     "rclone", "sync", "/source", "/dest",
                     "--transfers", strconv.Itoa(r.Config.Transfers),
@@ -373,6 +474,12 @@ func (r *RcloneEngine) CreateSourceMover(...) error {
     // ... create pod
 }
 ```
+
+**Drawbacks of External Binary Approach:**
+- ⚠️ Requires separate container image
+- ⚠️ RHEL/CentOS users need EPEL or custom images
+- ⚠️ More complex Pod orchestration
+- ⚠️ Harder to integrate with crane's logging/metrics
 
 **CLI usage:**
 ```bash

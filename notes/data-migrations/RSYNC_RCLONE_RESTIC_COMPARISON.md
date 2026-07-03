@@ -74,6 +74,7 @@ rclone sync /source/ azure:container/path/
 - Checksum-based (MD5, SHA1, etc.)
 - Over HTTP/HTTPS or cloud APIs
 - Built-in for 40+ cloud providers
+- **Written in Go** - can be used as a library!
 
 **Pros:**
 - ✅ **Multi-threaded** (4-16x faster than rsync for many files)
@@ -82,16 +83,28 @@ rclone sync /source/ azure:container/path/
 - ✅ Built-in bandwidth limiting
 - ✅ Better progress reporting
 - ✅ Built-in encryption
+- ✅ **Can be used as Go library** - no external binary needed!
 
 **Cons:**
 - ❌ Larger binary (~60MB vs rsync 1MB)
 - ❌ No delta-transfer algorithm (transfers whole files)
   - **Note:** For PVC migration, this doesn't matter (initial transfer anyway)
+- ⚠️ **If using as external binary:** Not available in RHEL base repositories - requires EPEL
+  - **Solution:** Use as Go library instead (recommended for crane)
 
 **Relationship to rsync:**
 - **rclone is NOT built on rsync**
 - **rclone is an alternative TO rsync**
 - Think: "rsync reimagined for the cloud era"
+
+**crane integration options:**
+1. ✅ **RECOMMENDED:** Import as Go library (`github.com/rclone/rclone`)
+   - Eliminates all dependency issues
+   - Compiled into crane binary
+   - Better integration
+2. ⚠️ **Alternative:** Call as external binary
+   - Requires EPEL on RHEL/CentOS
+   - Or use upstream container images
 
 **crane should add rclone** ✅
 

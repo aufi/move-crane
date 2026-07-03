@@ -310,6 +310,11 @@ rsyncServer, err := rsynctransfer.NewServer(
 
 We can add rclone/restic support to crane **without an operator**:
 
+> **✅ RECOMMENDED:** Use rclone as Go library (`github.com/rclone/rclone`)
+> - Eliminates RHEL/EPEL dependency issues
+> - Single crane binary with rclone compiled in
+> - Better integration with crane's codebase
+
 ```go
 // Proposed: crane/pkg/transfer/engines/
 type TransferEngine interface {
@@ -320,9 +325,10 @@ type TransferEngine interface {
 }
 
 // Implementations:
-type RsyncEngine struct { ... }   // Existing
-type RcloneEngine struct { ... }  // NEW
-type ResticEngine struct { ... }  // NEW
+type RsyncEngine struct { ... }         // Existing (calls rsync binary)
+type RcloneLibraryEngine struct { ... } // NEW (uses rclone as Go library) ✅ RECOMMENDED
+type RcloneBinaryEngine struct { ... }  // NEW (calls rclone binary - requires EPEL)
+type ResticEngine struct { ... }        // NEW
 ```
 
 **3. CopyMethod Strategies**

@@ -3,6 +3,16 @@
 **Date:** 2026-06-30  
 **Purpose:** Analyze how crane transfer-pvc uses rsync and how rclone would work similarly
 
+> **✅ RECOMMENDED:** Use rclone as a **Go library** instead of external binary
+> 
+> rclone is written in Go (`github.com/rclone/rclone`) and can be imported directly into crane's codebase. This approach:
+> - ✅ Eliminates RHEL/EPEL dependency issues entirely
+> - ✅ Simplifies deployment (single crane binary)
+> - ✅ Better integration with crane's error handling and logging
+> - ✅ No need for separate container images
+>
+> **Only if library approach is infeasible:** Use external binary (requires EPEL on RHEL/CentOS or upstream Alpine-based container images).
+
 ---
 
 ## How crane transfer-pvc Currently Works (rsync)
@@ -117,7 +127,186 @@ Source Cluster                    Destination Cluster
 
 ---
 
-## How rclone Would Work (Very Similar!)
+## How rclone Would Work
+
+### Approach A: rclone as Go Library (RECOMMENDED)
+
+Since rclone is written in Go, it can be used as a library within crane itself, eliminating the need for external binaries or separate container images.
+
+#### Architecture
+
+```
+Source Cluster                    Destination Cluster
+┌──────────────────┐             ┌──────────────────┐
+│  Source PVC      │             │  Dest PVC        │
+│  ┌────────────┐  │             │  ┌────────────┐  │
+│  │    Data    │  │             │  │   Empty    │  │
+│  └────────────┘  │             │  └────────────┘  │
+│        ▲         │             │        ▲         │
+│        │mount    │             │        │mount    │
+│  ┌─────┴──────┐  │             │  ┌─────┴──────┐  │
+│  │   crane    │  │   Direct    │  │   crane    │  │
+│  │  binary    │──┼─────────────┼─►│  binary    │  │
+│  │            │  │   Network   │  │            │  │
+│  │ + rclone   │  │   Transfer  │  │ + rclone   │  │
+│  │  library   │  │             │  │  library   │  │
+│  └────────────┘  │             │  └────────────┘  │
+└──────────────────┘             └──────────────────┘
+```
+
+#### Implementation
+
+**1. Add rclone dependency to crane:**
+
+```go
+// go.mod
+module github.com/konveyor/crane
+
+require (
+    github.com/rclone/rclone v1.68.2
+    // ... other dependencies
+)
+```
+
+**2. Create rclone engine using library:**
+
+```go
+// pkg/transfer/rclone/library.go
+package rclone
+
+import (
+    "context"
+    "fmt"
+    
+    "github.com/rclone/rclone/fs"
+    "github.com/rclone/rclone/fs/sync"
+    "github.com/rclone/rclone/fs/operations"
+    rcloneConfig "github.com/rclone/rclone/fs/config"
+    "github.com/rclone/rclone/backend/local"
+    "github.com/rclone/rclone/lib/pacer"
+)
+
+type LibraryEngine struct {
+    Config RcloneConfig
+}
+
+type RcloneConfig struct {
+    Transfers      int
+    Checkers       int
+    BandwidthLimit string
+    RetryAttempts  int
+}
+
+func (e *LibraryEngine) Transfer(ctx context.Context, sourcePath, destPath string) error {
+    // Initialize rclone configuration (in-memory, no config file needed)
+    rcloneConfig.SetConfigPath("")
+    
+    // Set global options
+    fs.Config.Transfers = e.Config.Transfers
+    fs.Config.Checkers = e.Config.Checkers
+    fs.Config.Retries = e.Config.RetryAttempts
+    
+    if e.Config.BandwidthLimit != "" {
+        if err := fs.Config.BwLimit.Set(e.Config.BandwidthLimit); err != nil {
+            return fmt.Errorf("invalid bandwidth limit: %w", err)
+        }
+    }
+    
+    // Create filesystem instances for source and destination
+    srcFs, err := local.NewFs(ctx, "local", sourcePath, nil)
+    if err != nil {
+        return fmt.Errorf("failed to initialize source: %w", err)
+    }
+    
+    dstFs, err := local.NewFs(ctx, "local", destPath, nil)
+    if err != nil {
+        return fmt.Errorf("failed to initialize destination: %w", err)
+    }
+    
+    // Perform the sync
+    // This is equivalent to: rclone sync /source /dest
+    err = sync.Sync(ctx, dstFs, srcFs, false)
+    if err != nil {
+        return fmt.Errorf("sync failed: %w", err)
+    }
+    
+    return nil
+}
+
+// GetProgress returns current transfer progress
+func (e *LibraryEngine) GetProgress(ctx context.Context) (*Progress, error) {
+    // rclone library exposes accounting information
+    stats := operations.GetStats(ctx)
+    
+    return &Progress{
+        BytesTransferred: stats.GetBytes(),
+        TotalBytes:       stats.GetTotalBytes(),
+        TransferRate:     stats.GetBytesPerSecond(),
+        FilesTransferred: stats.GetTransfers(),
+        Errors:           stats.GetErrors(),
+    }, nil
+}
+```
+
+**3. Use in crane Pod:**
+
+```go
+func (r *RcloneEngine) CreateTransferPod(...) error {
+    pod := &corev1.Pod{
+        Spec: corev1.PodSpec{
+            Containers: []corev1.Container{{
+                Name:  "crane-rclone-transfer",
+                Image: "quay.io/konveyor/crane:latest",  // crane binary with rclone built-in
+                Command: []string{
+                    "crane", "transfer-pvc",
+                    "--engine=rclone-library",  // Use built-in library
+                    "--source-path=/mnt/source",
+                    "--dest-path=/mnt/dest",
+                    "--transfers=16",
+                    "--checkers=32",
+                    "--bandwidth-limit=100M",
+                },
+                VolumeMounts: []corev1.VolumeMount{
+                    {Name: "source", MountPath: "/mnt/source", ReadOnly: true},
+                    {Name: "dest", MountPath: "/mnt/dest"},
+                },
+            }},
+            Volumes: []corev1.Volume{
+                {Name: "source", VolumeSource: corev1.VolumeSource{
+                    PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+                        ClaimName: sourcePVC,
+                        ReadOnly:  true,
+                    },
+                }},
+                {Name: "dest", VolumeSource: corev1.VolumeSource{
+                    PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+                        ClaimName: destPVC,
+                    },
+                }},
+            },
+        },
+    }
+    
+    return r.client.Create(ctx, pod)
+}
+```
+
+**Benefits:**
+- ✅ No external binary dependency
+- ✅ No RHEL/EPEL issues
+- ✅ Single crane container image
+- ✅ Native Go error handling
+- ✅ Better logging integration
+- ✅ Easier to test and debug
+
+**Drawbacks:**
+- ⚠️ Larger crane binary (~40-50MB increase)
+- ⚠️ More dependencies in go.mod
+- ⚠️ Need to understand rclone library API
+
+---
+
+## Approach B: rclone as External Binary (Fallback)
 
 ### Architecture Comparison
 

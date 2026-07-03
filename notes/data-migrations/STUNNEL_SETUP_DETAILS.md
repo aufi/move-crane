@@ -585,4 +585,6 @@ openssl verify -CAfile ca.crt server.crt
 - rclone má **built-in HTTPS support** - nepotřebuje stunnel!
 - rclone může přímo používat TLS (`--use-server-modtime --cert client.crt --key client.key`)
 - Jednodušší architektura (bez extra stunnel containerů)
+- ✅ **Recommended:** Use rclone as Go library in crane binary (eliminates all deployment issues)
+- ⚠️ **Alternative:** If using as external binary, note it's not in RHEL repos (requires EPEL or upstream images)
 

@@ -707,7 +707,7 @@ func TestTransferPVC_FullFlow(t *testing.T) {
 | Tool | Pros | Cons | Recommendation |
 |------|------|------|----------------|
 | **[restic](https://restic.net/)** | - Deduplication<br>- Encryption<br>- Incremental snapshots<br>- Multi-threaded | - Designed for backups, not live sync<br>- Different mental model | ❌ Not suitable for PVC transfer |
-| **[rclone](https://rclone.org/)** | - Multi-threaded<br>- Checksums<br>- Bandwidth limiting<br>- Resume support<br>- Better progress | - Larger binary<br>- More dependencies | ✅ **RECOMMENDED** for large files |
+| **[rclone](https://rclone.org/)** | - Multi-threaded<br>- Checksums<br>- Bandwidth limiting<br>- Resume support<br>- Better progress | - Larger binary<br>- More dependencies<br>- ⚠️ Not in RHEL repos (requires EPEL) | ✅ **RECOMMENDED** for large files |
 | **tar + pigz** | - Parallel compression<br>- Simpler model | - No delta transfer<br>- No resume | ❌ Worse than rsync for most cases |
 | **[fpart + rsync](https://github.com/martymac/fpart)** | - Parallel rsync processes<br>- Uses existing rsync | - More complex orchestration<br>- Needs file listing first | ⚠️ Consider for very large PVCs |
 
@@ -726,9 +726,50 @@ const (
 cmd.Flags().Var(&c.Engine, "engine", "Transfer engine (rsync|rclone)")
 ```
 
+**rclone integration: Use as Go Library** (RECOMMENDED)
+
+Since rclone is written in Go, it can be imported as a library:
+
+```go
+// go.mod
+require (
+    github.com/rclone/rclone v1.68.2
+)
+```
+
+```go
+// pkg/transfer/rclone/library.go
+import (
+    "github.com/rclone/rclone/fs"
+    "github.com/rclone/rclone/fs/sync"
+    "github.com/rclone/rclone/backend/local"
+)
+
+func Transfer(ctx context.Context, source, dest string, config RcloneConfig) error {
+    // Configure
+    fs.Config.Transfers = config.Transfers
+    fs.Config.Checkers = config.Checkers
+    fs.Config.BwLimit.Set(config.BandwidthLimit)
+    
+    // Create filesystems
+    srcFs, _ := local.NewFs(ctx, "local", source, nil)
+    dstFs, _ := local.NewFs(ctx, "local", dest, nil)
+    
+    // Sync (this is what 'rclone sync' does internally)
+    return sync.Sync(ctx, dstFs, srcFs, false)
+}
+```
+
+**Benefits of library approach:**
+- ✅ No external binary dependency
+- ✅ No RHEL/EPEL issues (all Go code)
+- ✅ Single crane binary
+- ✅ Better error handling integration
+- ✅ Native progress reporting
+
 **rclone advantages for PVC migration:**
 ```bash
-# rclone supports:
+# When using library, you get:
 --transfers=16           # Parallel file transfers (rsync is single-threaded!)
 --checkers=32            # Parallel checksum verification
 --bwlimit=10M           # Built-in bandwidth limiting
@@ -737,6 +778,13 @@ cmd.Flags().Var(&c.Engine, "engine", "Transfer engine (rsync|rclone)")
 --progress              # Better progress output
 --stats=1s              # Real-time stats
 ```
+
+> **Alternative (not recommended):** Call rclone as external binary
+> 
+> Only if library integration is infeasible:
+> - Use the upstream `rclone/rclone` container image (Alpine-based)
+> - Or build a custom RHEL UBI image with EPEL enabled
+> - Or use Fedora as the base image
 
 **Priority:** 🟡 HIGH - rclone can dramatically improve large PVC transfers
 
