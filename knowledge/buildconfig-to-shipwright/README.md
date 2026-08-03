@@ -21,4 +21,5 @@ Prerequisite: extending the crane plugin API with `NewResources` in `PluginRespo
 ## Files
 
 - [api_and_poc_comparison.md](api_and_poc_comparison.md) — complete API reference for both systems, existing PoC analysis (crane-lib/convert), gap analysis
+- [enhancement_review.md](enhancement_review.md) — review findings and suggested fixes for the enhancement proposal
 - Enhancement PR: [konveyor/enhancements#300](https://github.com/konveyor/enhancements/pull/300)

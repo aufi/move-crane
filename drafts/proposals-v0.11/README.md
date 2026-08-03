@@ -2,17 +2,18 @@
 
 **Date:** 2026-07-02  
 **Status:** Proposals for crane v0.11 release  
-**Focus:** `crane transfer-pvc` improvements and new features
+**Focus:** `crane transfer-pvc` improvements, new features, and BuildConfig migration
 
 ---
 
 ## Overview
 
-This directory contains three proposals for improving `crane transfer-pvc` in the v0.11 release:
+This directory contains proposals for the crane v0.11 release:
 
 1. **Priority Fixes** - Critical bug fixes and quick wins
 2. **In-Cluster Execution** - Run transfer-pvc as Kubernetes Job
 3. **PVC Discovery** - Automatic PVC discovery from export artifacts
+4. **BuildConfig to Shipwright** - Convert OpenShift BuildConfigs to Shipwright Builds via transform plugin
 
 ---
 
@@ -23,6 +24,7 @@ This directory contains three proposals for improving `crane transfer-pvc` in th
 | **[TRANSFER_PVC_FIXES_PLAN.md](TRANSFER_PVC_FIXES_PLAN.md)** | 🔧 Fixes | 2.5 weeks | 12 priority fixes and improvements<br>No major rewrites<br>100% backward compatible |
 | **[IN_CLUSTER_EXECUTION_PROPOSAL.md](IN_CLUSTER_EXECUTION_PROPOSAL.md)** | 🚀 Feature | TBD | Run transfer-pvc as Kubernetes Job<br>Reliability + automatic cleanup<br>GitOps integration |
 | **[PVC_EXPLORE_PROPOSAL.md](PVC_EXPLORE_PROPOSAL.md)** | 🔍 Feature | TBD | Auto-discover PVCs from export<br>`crane transfer-pvc explore`<br>Multiple output formats |
+| **[BUILDCONFIG_TO_SHIPWRIGHT_PROPOSAL.md](BUILDCONFIG_TO_SHIPWRIGHT_PROPOSAL.md)** | 🔄 Feature | ~7 weeks | BuildConfig → Shipwright Build conversion<br>New transform plugin<br>Requires plugin API extension |
 
 ---
 
