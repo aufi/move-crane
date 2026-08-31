@@ -1,0 +1,67 @@
+== context ==
+kubeconfig: /home/maufart/mig/test-day-v0.11/kubeconfig-src
+server:     https://api.src-cluster.example.com:6443
+namespace:  wp-timing
+app dir:    /home/maufart/mig/test-day-v0.11/test-app/wordpress
+
+== ensure namespace ==
+namespace/wp-timing created
+
+== seed secrets (.env) ==
+reusing existing /home/maufart/mig/test-day-v0.11/test-app/wordpress/.env
+
+== apply kustomize overlay ==
+configmap/nginx-config created
+secret/wordpress-secrets-kdfk5f65bm created
+service/wordpress created
+service/wordpress-mysql created
+persistentvolumeclaim/mysql-pv-claim created
+persistentvolumeclaim/wordpress-pv-claim created
+deployment.apps/wordpress created
+deployment.apps/wordpress-mysql created
+job.batch/wordpress-install created
+
+== wait for readiness ==
+deployment.apps/wordpress-mysql condition met
+deployment.apps/wordpress condition met
+job.batch/wordpress-install condition met
+
+== resources ==
+Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable in v4.10000+
+NAME                                  READY   STATUS      RESTARTS      AGE
+pod/wordpress-85757d9cb-gdhd5         2/2     Running     1 (21s ago)   27s
+pod/wordpress-install-b94w4           0/1     Completed   0             26s
+pod/wordpress-mysql-8ddcc48d9-4xzpb   1/1     Running     0             27s
+
+NAME                      TYPE           CLUSTER-IP       EXTERNAL-IP                                                              PORT(S)        AGE
+service/wordpress         LoadBalancer   172.30.113.197   a8a5fc60275fd41a7b538c8a0f78a472-911046998.us-east-1.elb.amazonaws.com   80:30589/TCP   30s
+service/wordpress-mysql   ClusterIP      172.30.155.136   <none>                                                                   3306/TCP       29s
+
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/wordpress         1/1     1            1           28s
+deployment.apps/wordpress-mysql   1/1     1            1           28s
+
+NAME                                        DESIRED   CURRENT   READY   AGE
+replicaset.apps/wordpress-85757d9cb         1         1         1       28s
+replicaset.apps/wordpress-mysql-8ddcc48d9   1         1         1       28s
+
+NAME                          STATUS     COMPLETIONS   DURATION   AGE
+job.batch/wordpress-install   Complete   1/1           25s        28s
+
+NAME                                       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/mysql-pv-claim       Bound    pvc-c4a21c11-9837-4e34-90e7-b2ef6cab6b1e   1Gi        RWO            gp3-csi        <unset>                 30s
+persistentvolumeclaim/wordpress-pv-claim   Bound    pvc-d3908bb8-c1bb-487c-a47d-d9077af471a1   1Gi        RWO            gp3-csi        <unset>                 30s
+
+NAME                                  TYPE                      DATA   AGE
+secret/builder-dockercfg-z9m6t        kubernetes.io/dockercfg   1      34s
+secret/default-dockercfg-8ss72        kubernetes.io/dockercfg   1      34s
+secret/deployer-dockercfg-vbs2z       kubernetes.io/dockercfg   1      34s
+secret/wordpress-secrets-kdfk5f65bm   Opaque                    3      32s
+
+NAME                                 DATA   AGE
+configmap/kube-root-ca.crt           1      34s
+configmap/nginx-config               1      33s
+configmap/openshift-service-ca.crt   1      34s
+
+OK: WordPress deployed to 'wp-timing' on https://api.src-cluster.example.com:6443
+EXIT: 0

@@ -1,0 +1,730 @@
+Full migration run — 2026-08-31T11:37:22+02:00
+namespace: wordpress
+
+############################################################
+# STEP 0a: ensure source app is running (scale to 1)
+############################################################
+
+deployment.apps/wordpress scaled
+deployment.apps/wordpress-mysql scaled
+Waiting for deployment "wordpress-mysql" rollout to finish: 0 of 1 updated replicas are available...
+deployment "wordpress-mysql" successfully rolled out
+deployment "wordpress" successfully rolled out
+
+############################################################
+# STEP 0b: capture sample-post seed id from the source install Job
+############################################################
+
+source seed id: 11428
+
+############################################################
+# STEP 0c: validate the SOURCE app
+############################################################
+
+== context ==
+kubeconfig: /home/maufart/mig/test-day-v0.11/kubeconfig-src
+server:     https://api.src-cluster.example.com:6443
+namespace:  wordpress
+
+== resolve WordPress seed ID ==
+seed id: 11428 (from environment)
+
+== run upstream validate.sh ==
+# Validating WordPress service
+# Using kubectl context: default/api-octl-mman-fdfa814-220-mg-dog8code-com:6443/kube:admin
+
+Checking MySQL deployment status...
+Waiting for deployment 'wordpress-mysql' to be ready...
+deployment.apps/wordpress-mysql condition met
+✓ PASSED: Deployment 'wordpress-mysql' is ready
+Checking WordPress deployment status...
+Waiting for deployment 'wordpress' to be ready...
+deployment.apps/wordpress condition met
+✓ PASSED: Deployment 'wordpress' is ready
+Checking MySQL service presence...
+✓ PASSED: Service 'wordpress-mysql' exists
+Checking WordPress service presence...
+✓ PASSED: Service 'wordpress' exists
+Starting port-forward on port 18080...
+Waiting for port-forward to be ready...
+Forwarding from 127.0.0.1:18080 -> 8080
+Forwarding from [::1]:18080 -> 8080
+Performing HTTP request to http://127.0.0.1:18080/...
+Handling connection for 18080
+HTTP Status: 200
+✓ PASSED: HTTP status is 200
+✓ PASSED: Found 'Hello from k8s' in HTML content
+✓ PASSED: Found _some_ 'Sample post #' in HTML content
+✓ PASSED: Found exact '#11428' in HTML content
+
+✓ All validation checks passed!
+
+Stopping port-forward (PID: 66601)...
+
+############################################################
+# STEP 1: crane export -> transform -> apply (source)
+############################################################
+
+== context ==
+kubeconfig: /home/maufart/mig/test-day-v0.11/kubeconfig-src
+server:     https://api.src-cluster.example.com:6443
+namespace:  wordpress
+
+== 1) crane export ==
++ crane export --kubeconfig /home/maufart/mig/test-day-v0.11/kubeconfig-src -n wordpress --export-dir /home/maufart/mig/test-day-v0.11/export --overwrite
+time="2026-08-31T11:37:43+02:00" level=info msg="Starting export for namespace \"wordpress\""
+I0831 11:37:44.310024   66665 warnings.go:107] "Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"
+time="2026-08-31T11:37:44+02:00" level=info msg="Adding resource: endpoints to the list of GVRs to be extracted"
+time="2026-08-31T11:37:44+02:00" level=info msg="Adding resource: persistentvolumeclaims to the list of GVRs to be extracted"
+time="2026-08-31T11:37:44+02:00" level=info msg="Adding resource: serviceaccounts to the list of GVRs to be extracted"
+time="2026-08-31T11:37:45+02:00" level=info msg="Adding resource: secrets to the list of GVRs to be extracted"
+time="2026-08-31T11:37:45+02:00" level=info msg="Adding resource: pods to the list of GVRs to be extracted"
+time="2026-08-31T11:37:45+02:00" level=info msg="Adding resource: services to the list of GVRs to be extracted"
+time="2026-08-31T11:37:45+02:00" level=info msg="Adding resource: configmaps to the list of GVRs to be extracted"
+time="2026-08-31T11:37:46+02:00" level=info msg="Adding resource: replicasets to the list of GVRs to be extracted"
+time="2026-08-31T11:37:46+02:00" level=info msg="Adding resource: deployments to the list of GVRs to be extracted"
+time="2026-08-31T11:37:47+02:00" level=info msg="Adding resource: jobs to the list of GVRs to be extracted"
+time="2026-08-31T11:37:47+02:00" level=info msg="Adding resource: clusterrolebindings to the list of GVRs to be extracted"
+time="2026-08-31T11:37:48+02:00" level=info msg="Adding resource: rolebindings to the list of GVRs to be extracted"
+time="2026-08-31T11:37:48+02:00" level=info msg="Adding resource: clusterroles to the list of GVRs to be extracted"
+time="2026-08-31T11:37:49+02:00" level=info msg="Adding resource: endpointslices to the list of GVRs to be extracted"
+I0831 11:37:49.781787   66665 warnings.go:107] "Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable in v4.10000+"
+time="2026-08-31T11:37:50+02:00" level=info msg="Adding resource: rolebindings to the list of GVRs to be extracted"
+time="2026-08-31T11:37:51+02:00" level=info msg="Adding resource: securitycontextconstraints to the list of GVRs to be extracted"
+time="2026-08-31T11:38:00+02:00" level=info msg="Filtering for kind ClusterRole (294 found)"
+time="2026-08-31T11:38:00+02:00" level=info msg="After filtering 0 remained out of 294"
+time="2026-08-31T11:38:00+02:00" level=info msg="Filtering for kind SecurityContextConstraints (16 found)"
+time="2026-08-31T11:38:00+02:00" level=info msg="After filtering 0 remained out of 16"
+time="2026-08-31T11:38:00+02:00" level=info msg="No matching cluster-scoped resources found; _cluster/ directory will be empty"
+time="2026-08-31T11:38:00+02:00" level=info msg="Export complete for namespace \"wordpress\""
+exported resources:
+ConfigMap__v1_wordpress_kube-root-ca.crt.yaml
+ConfigMap__v1_wordpress_nginx-config.yaml
+ConfigMap__v1_wordpress_openshift-service-ca.crt.yaml
+Deployment_apps_v1_wordpress_wordpress-mysql.yaml
+Deployment_apps_v1_wordpress_wordpress.yaml
+EndpointSlice_discovery.k8s.io_v1_wordpress_wordpress-mysql-pn7wf.yaml
+EndpointSlice_discovery.k8s.io_v1_wordpress_wordpress-p2cj6.yaml
+Endpoints__v1_wordpress_wordpress-mysql.yaml
+Endpoints__v1_wordpress_wordpress.yaml
+Job_batch_v1_wordpress_wordpress-install.yaml
+PersistentVolumeClaim__v1_wordpress_mysql-pv-claim.yaml
+PersistentVolumeClaim__v1_wordpress_wordpress-pv-claim.yaml
+Pod__v1_wordpress_wordpress-install-rvnsp.yaml
+Pod__v1_wordpress_wordpress-mysql-8ddcc48d9-hdhk7.yaml
+Pod__v1_wordpress_wordpress-85757d9cb-r55j6.yaml
+ReplicaSet_apps_v1_wordpress_wordpress-mysql-8ddcc48d9.yaml
+ReplicaSet_apps_v1_wordpress_wordpress-85757d9cb.yaml
+ReplicaSet_apps_v1_wordpress_wordpress-859f57dc84.yaml
+RoleBinding_authorization.openshift.io_v1_wordpress_system_deployers_d5387c68.yaml
+RoleBinding_authorization.openshift.io_v1_wordpress_system_image-builders_31369515.yaml
+RoleBinding_authorization.openshift.io_v1_wordpress_system_image-pullers_1a9fb223.yaml
+RoleBinding_rbac.authorization.k8s.io_v1_wordpress_system_deployers_48af5f50.yaml
+RoleBinding_rbac.authorization.k8s.io_v1_wordpress_system_image-builders_39cadcb6.yaml
+RoleBinding_rbac.authorization.k8s.io_v1_wordpress_system_image-pullers_2e5ddf51.yaml
+Secret__v1_wordpress_builder-dockercfg-ct2fw.yaml
+Secret__v1_wordpress_default-dockercfg-4klx4.yaml
+Secret__v1_wordpress_deployer-dockercfg-bbrwv.yaml
+Secret__v1_wordpress_wordpress-secrets-kdfk5f65bm.yaml
+ServiceAccount__v1_wordpress_builder.yaml
+ServiceAccount__v1_wordpress_default.yaml
+ServiceAccount__v1_wordpress_deployer.yaml
+Service__v1_wordpress_wordpress-mysql.yaml
+Service__v1_wordpress_wordpress.yaml
+
+== 2) crane transform ==
++ crane transform --export-dir /home/maufart/mig/test-day-v0.11/export --transform-dir /home/maufart/mig/test-day-v0.11/transform --overwrite
+time="2026-08-31T11:38:00+02:00" level=info msg="Starting transform..."
+time="2026-08-31T11:38:00+02:00" level=info msg="Discovered 1 existing stage(s), running all"
+time="2026-08-31T11:38:00+02:00" level=info msg="Executing stage 1/1: 10_KubernetesPlugin"
+time="2026-08-31T11:38:00+02:00" level=info msg="Stage 10_KubernetesPlugin: loaded 33 input resource(s)"
+time="2026-08-31T11:38:00+02:00" level=warning msg="Duplicate resource RoleBinding/wordpress/system:deployers (both active): last occurrence will be used"
+time="2026-08-31T11:38:00+02:00" level=warning msg="Duplicate resource RoleBinding/wordpress/system:image-builders (both active): last occurrence will be used"
+time="2026-08-31T11:38:00+02:00" level=warning msg="Duplicate resource RoleBinding/wordpress/system:image-pullers (both active): last occurrence will be used"
+time="2026-08-31T11:38:00+02:00" level=info msg="Stage 10_KubernetesPlugin: produced 13 output resource(s)"
+time="2026-08-31T11:38:00+02:00" level=info msg="Successfully completed 1 stage(s)"
+time="2026-08-31T11:38:00+02:00" level=info msg="Transform complete (all stages)"
+transform stages:
+10_KubernetesPlugin
+
+== 3) crane apply ==
++ crane apply --transform-dir /home/maufart/mig/test-day-v0.11/transform --output-dir /home/maufart/mig/test-day-v0.11/output --ordered --overwrite
+time="2026-08-31T11:38:00+02:00" level=info msg="Starting apply..."
+time="2026-08-31T11:38:00+02:00" level=info msg="Applying all stages..."
+time="2026-08-31T11:38:00+02:00" level=info msg="Applying final stage: 10_KubernetesPlugin"
+time="2026-08-31T11:38:00+02:00" level=info msg="Successfully applied final stage to /home/maufart/mig/test-day-v0.11/output/output.yaml"
+time="2026-08-31T11:38:00+02:00" level=info msg="Apply complete"
+
+== output ==
+output.yaml
+resources
+
+resource kinds in output:
+      2 kind: ConfigMap
+      2 kind: Deployment
+      1 kind: Job
+      3 kind: RoleBinding
+      1 kind: Secret
+      2 kind: Service
+      2 kind: ServiceAccount
+
+OK: export/transform/apply complete (nothing applied to any cluster)
+
+############################################################
+# STEP 2: merge kubeconfigs (contexts src / tgt)
+############################################################
+
+== source context: default/api-octl-mman-fdfa814-220-mg-dog8code-com:6443/kube:admin
+== target context: default/api-octl-mman-4dfb891-219-mg-dog8code-com:6443/kube:admin
+
+== flatten-merge into /home/maufart/mig/test-day-v0.11/kubeconfig-merged ==
+
+== rename contexts to src / tgt ==
+Context "default/api-octl-mman-fdfa814-220-mg-dog8code-com:6443/kube:admin" renamed to "src".
+Context "default/api-octl-mman-4dfb891-219-mg-dog8code-com:6443/kube:admin" renamed to "tgt".
+
+== verify ==
+src -> https://api.src-cluster.example.com:6443
+tgt -> https://api.tgt-cluster.example.com:6443
+
+OK: merged kubeconfig ready: /home/maufart/mig/test-day-v0.11/kubeconfig-merged
+Use: KUBECONFIG=/home/maufart/mig/test-day-v0.11/kubeconfig-merged oc --context src|tgt ...
+
+############################################################
+# STEP 3: transfer-pvc (scales source down, copies both PVCs)
+############################################################
+
+== contexts ==
+src -> https://api.src-cluster.example.com:6443
+tgt -> https://api.tgt-cluster.example.com:6443
+
+== 1) ensure target namespace 'wordpress' ==
+namespace/wordpress created
+
+== 2) scale down source app (release RWO volumes, consistent copy) ==
+deployment.apps/wordpress scaled
+deployment.apps/wordpress-mysql scaled
+waiting for wordpress pods to terminate...
+deployment "wordpress" successfully rolled out
+waiting for wordpress-mysql pods to terminate...
+deployment "wordpress-mysql" successfully rolled out
+source pods:
+NAME                      READY   STATUS      RESTARTS   AGE
+wordpress-install-rvnsp   0/1     Completed   0          52m
+
+== 3) transfer PVCs ==
+
+--- transfer-pvc: mysql-pv-claim ---
++ crane transfer-pvc --source-context src --destination-context tgt --pvc-name mysql-pv-claim:mysql-pv-claim --pvc-namespace wordpress:wordpress --endpoint route --dest-storage-class gp3-csi --dest-storage-requests 1Gi --verify
+time="2026-08-31T11:38:05+02:00" level=info msg="Starting PVC transfer: wordpress/mysql-pv-claim -> wordpress/mysql-pv-claim"
+
+crane transfer-pvc
+source context:      src
+destination context: tgt
+PVC:                 wordpress/mysql-pv-claim -> wordpress/mysql-pv-claim
+endpoint:            route
+
+time="2026-08-31T11:38:05+02:00" level=info msg="Phase 1: Reading source PVC"
+[1/7] Reading source PVC ...
+[1/7] Reading source PVC ... ok
+time="2026-08-31T11:38:06+02:00" level=info msg="Phase 2: Creating destination PVC"
+[2/7] Creating destination PVC ...
+[2/7] Creating destination PVC ... ok
+time="2026-08-31T11:38:07+02:00" level=info msg="Phase 3: Creating endpoint (route)"
+[3/7] Creating endpoint (route) ...
+{"level":"info","logger":"transfer-pvc","msg":"endpoint with","port":6443,"route":"{\"Namespace\":\"wordpress\",\"Name\":\"mysql-pv-claim\"}","time":"2026-08-31T11:38:07+02:00","type":"EndpointTypePassthrough"}
+[3/7] Creating endpoint (route) ... ok
+time="2026-08-31T11:38:08+02:00" level=info msg="Phase 4: Waiting for endpoint healthy"
+[4/7] Waiting for endpoint healthy ...
+[4/7] Waiting for endpoint healthy ... ok
+time="2026-08-31T11:38:13+02:00" level=info msg="Phase 5: Setting up secure tunnel and server"
+[5/7] Setting up secure tunnel and server ...
+{"level":"info","logger":"transfer-pvc","msg":"generating new certificate bundle","time":"2026-08-31T11:38:14+02:00","transportServer":"{\"Namespace\":\"wordpress\",\"Name\":\"mysql-pv-claim\"}"}
+  rsync server not ready, retrying...
+  rsync server not ready, retrying...
+[5/7] Setting up secure tunnel and server ... ok
+time="2026-08-31T11:38:31+02:00" level=info msg="Phase 6: Copying data (rsync)"
+[6/7] Copying data (rsync) ...
+time="2026-08-31T11:38:33+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T11:38:34+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T11:38:35+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T11:38:36+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T11:38:37+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T11:38:38+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-650b166f93 is not ready, retrying..."
+Status:	Preparing
+Status:	Preparing
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Succeeded
+  Files:
+    Sent:	362
+    Total:	181
+[6/7] Copying data (rsync) ... finished  exit=0
+time="2026-08-31T11:38:41+02:00" level=info msg="Phase 7: Cleanup"
+[7/7] Cleaning up temporary resources ...
+[7/7] Cleaning up temporary resources ... ok
+time="2026-08-31T11:38:42+02:00" level=info msg="PVC transfer complete: wordpress/mysql-pv-claim -> wordpress/mysql-pv-claim"
+
+Summary
+-------
+PVC data copy: succeeded
+duration:      37s
+Done.
+
+--- transfer-pvc: wordpress-pv-claim ---
++ crane transfer-pvc --source-context src --destination-context tgt --pvc-name wordpress-pv-claim:wordpress-pv-claim --pvc-namespace wordpress:wordpress --endpoint route --dest-storage-class gp3-csi --dest-storage-requests 1Gi --verify
+time="2026-08-31T11:38:42+02:00" level=info msg="Starting PVC transfer: wordpress/wordpress-pv-claim -> wordpress/wordpress-pv-claim"
+
+crane transfer-pvc
+source context:      src
+destination context: tgt
+PVC:                 wordpress/wordpress-pv-claim -> wordpress/wordpress-pv-claim
+endpoint:            route
+
+time="2026-08-31T11:38:42+02:00" level=info msg="Phase 1: Reading source PVC"
+[1/7] Reading source PVC ...
+[1/7] Reading source PVC ... ok
+time="2026-08-31T11:38:43+02:00" level=info msg="Phase 2: Creating destination PVC"
+[2/7] Creating destination PVC ...
+[2/7] Creating destination PVC ... ok
+time="2026-08-31T11:38:44+02:00" level=info msg="Phase 3: Creating endpoint (route)"
+[3/7] Creating endpoint (route) ...
+{"level":"info","logger":"transfer-pvc","msg":"endpoint with","port":6443,"route":"{\"Namespace\":\"wordpress\",\"Name\":\"wordpress-pv-claim\"}","time":"2026-08-31T11:38:44+02:00","type":"EndpointTypePassthrough"}
+[3/7] Creating endpoint (route) ... ok
+time="2026-08-31T11:38:45+02:00" level=info msg="Phase 4: Waiting for endpoint healthy"
+[4/7] Waiting for endpoint healthy ...
+[4/7] Waiting for endpoint healthy ... ok
+time="2026-08-31T11:38:50+02:00" level=info msg="Phase 5: Setting up secure tunnel and server"
+[5/7] Setting up secure tunnel and server ...
+{"level":"info","logger":"transfer-pvc","msg":"generating new certificate bundle","time":"2026-08-31T11:38:51+02:00","transportServer":"{\"Namespace\":\"wordpress\",\"Name\":\"wordpress-pv-claim\"}"}
+  rsync server not ready, retrying...
+  rsync server not ready, retrying...
+  rsync server not ready, retrying...
+[5/7] Setting up secure tunnel and server ... ok
+time="2026-08-31T11:39:13+02:00" level=info msg="Phase 6: Copying data (rsync)"
+[6/7] Copying data (rsync) ...
+[controller-runtime] log.SetLogger(...) was never called; logs will not be displayed.
+Detected at:
+	>  goroutine 1 [running]:
+	>  runtime/debug.Stack()
+	>  	runtime/debug/stack.go:26 +0x5e
+	>  sigs.k8s.io/controller-runtime/pkg/log.eventuallyFulfillRoot()
+	>  	sigs.k8s.io/controller-runtime@v0.23.3/pkg/log/log.go:60 +0xcd
+	>  sigs.k8s.io/controller-runtime/pkg/log.(*delegatingLogSink).WithValues(0xc000185900, {0x0, 0x0, 0x0})
+	>  	sigs.k8s.io/controller-runtime@v0.23.3/pkg/log/deleg.go:168 +0x49
+	>  github.com/go-logr/logr.Logger.WithValues(...)
+	>  	github.com/go-logr/logr@v1.4.3/logr.go:332
+	>  sigs.k8s.io/controller-runtime/pkg/log.FromContext({0x25455a8?, 0x3787fe0?}, {0x0?, 0x0?, 0x0?})
+	>  	sigs.k8s.io/controller-runtime@v0.23.3/pkg/log/log.go:98 +0xba
+	>  sigs.k8s.io/controller-runtime/pkg/log.(*KubeAPIWarningLogger).HandleWarningHeaderWithContext(0xc0000112f0, {0x25455a8?, 0x3787fe0?}, 0x12b, {0xb?, 0x21f2bb5?}, {0xc000841f00, 0xb4})
+	>  	sigs.k8s.io/controller-runtime@v0.23.3/pkg/log/warning_handler.go:49 +0x65
+	>  k8s.io/client-go/rest.handleWarnings({0x25455a8, 0x3787fe0}, 0x23?, {0x252ea00?, 0xc0000112f0?})
+	>  	k8s.io/client-go@v0.35.3/rest/warnings.go:184 +0x11d
+	>  k8s.io/client-go/rest.(*Request).transformResponse(0xc0009e6900, {0x25455a8, 0x3787fe0}, 0xc000b08510, 0xc0009f8780)
+	>  	k8s.io/client-go@v0.35.3/rest/request.go:1263 +0x3ab
+	>  k8s.io/client-go/rest.(*Request).Do.func1(0xc0009fd200?, 0xc0003d2a40?)
+	>  	k8s.io/client-go@v0.35.3/rest/request.go:1137 +0x3f
+	>  k8s.io/client-go/rest.(*Request).request.func3.1(...)
+	>  	k8s.io/client-go@v0.35.3/rest/request.go:1107
+	>  k8s.io/client-go/rest.(*Request).request.func3(0xc000b08510, 0xc0000f45c8, {0x2545730?, 0xc0009fd200?}, 0x0?, 0x0?, 0xc0009f8780, {0x0?, 0x0?}, 0x234efb8)
+	>  	k8s.io/client-go@v0.35.3/rest/request.go:1114 +0xcd
+	>  k8s.io/client-go/rest.(*Request).request(0xc0009e6900, {0x25455a8, 0x3787fe0}, 0xc0000f45c8)
+	>  	k8s.io/client-go@v0.35.3/rest/request.go:1116 +0x587
+	>  k8s.io/client-go/rest.(*Request).Do(0xc0009e6900, {0x25455a8, 0x3787fe0})
+	>  	k8s.io/client-go@v0.35.3/rest/request.go:1136 +0x127
+	>  sigs.k8s.io/controller-runtime/pkg/client.(*typedClient).Create(0xc000231dd0, {0x25455a8, 0x3787fe0}, {0x25687a8, 0xc00054cf08}, {0x0, 0x0, 0xc0003d2a40?})
+	>  	sigs.k8s.io/controller-runtime@v0.23.3/pkg/client/typed_client.go:50 +0x33a
+	>  sigs.k8s.io/controller-runtime/pkg/client.(*client).Create(0xc000231dd0?, {0x25455a8?, 0x3787fe0?}, {0x25687a8?, 0xc00054cf08?}, {0x0?, 0x0?, 0x0?})
+	>  	sigs.k8s.io/controller-runtime@v0.23.3/pkg/client/client.go:303 +0x85
+	>  sigs.k8s.io/controller-runtime/pkg/controller/controllerutil.CreateOrUpdate({0x25455a8, 0x3787fe0}, {0x2557460, 0xc000231dd0}, {0x25687a8, 0xc00054cf08}, 0xc0000f4f78)
+	>  	sigs.k8s.io/controller-runtime@v0.23.3/pkg/controller/controllerutil/controllerutil.go:333 +0x16d
+	>  github.com/migtools/pvc-transfer/transfer/rsync.(*client).reconcilePod(0xc0009aaa00, {0x25455a8, 0x3787fe0}, {0x2557460, 0xc000231dd0}, {0xc0003d2a40, 0x9})
+	>  	github.com/migtools/pvc-transfer@v0.0.0-20260820041907-3bfa753b411a/transfer/rsync/client.go:293 +0xc36
+	>  github.com/migtools/pvc-transfer/transfer/rsync.NewClient({_, _}, {_, _}, {_, _}, {_, _}, {{0x2549998, 0xc00013c6c0}, ...}, ...)
+	>  	github.com/migtools/pvc-transfer@v0.0.0-20260820041907-3bfa753b411a/transfer/rsync/client.go:200 +0x3ed
+	>  github.com/konveyor/crane/cmd/transfer-pvc.(*TransferPVCCommand).run(0xc0003df040)
+	>  	github.com/konveyor/crane/cmd/transfer-pvc/transfer-pvc.go:624 +0x363d
+	>  github.com/konveyor/crane/cmd/transfer-pvc.(*TransferPVCCommand).Run(0xc0003df040?)
+	>  	github.com/konveyor/crane/cmd/transfer-pvc/transfer-pvc.go:315 +0x28
+	>  github.com/konveyor/crane/cmd/transfer-pvc.NewTransferPVCCommand.func1(0xc000122600?, {0xc0002223c0?, 0x4?, 0x21d4517?})
+	>  	github.com/konveyor/crane/cmd/transfer-pvc/transfer-pvc.go:172 +0x4f
+	>  github.com/spf13/cobra.(*Command).execute(0xc0000d0608, {0xc0002222d0, 0xf, 0xf})
+	>  	github.com/spf13/cobra@v1.10.0/command.go:1015 +0xb02
+	>  github.com/spf13/cobra.(*Command).ExecuteC(0xc0000d0008)
+	>  	github.com/spf13/cobra@v1.10.0/command.go:1148 +0x465
+	>  github.com/spf13/cobra.(*Command).Execute(...)
+	>  	github.com/spf13/cobra@v1.10.0/command.go:1071
+	>  main.main()
+	>  	github.com/konveyor/crane/main.go:38 +0x617
+time="2026-08-31T11:39:15+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T11:39:16+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T11:39:17+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T11:39:18+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T11:39:19+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T11:39:20+02:00" level=warning msg="Container rsync in pod wordpress/rsync-client-0a85f44830 is not ready, retrying..."
+Status:	Preparing
+Status:	Preparing
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Transfer in-progress
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Finishing up
+Status:	Succeeded
+  Files:
+    Sent:	6704
+    Total:	3352
+[6/7] Copying data (rsync) ... finished  exit=0
+time="2026-08-31T11:39:24+02:00" level=info msg="Phase 7: Cleanup"
+[7/7] Cleaning up temporary resources ...
+[7/7] Cleaning up temporary resources ... ok
+time="2026-08-31T11:39:26+02:00" level=info msg="PVC transfer complete: wordpress/wordpress-pv-claim -> wordpress/wordpress-pv-claim"
+
+Summary
+-------
+PVC data copy: succeeded
+duration:      43s
+Done.
+
+== target PVCs after transfer ==
+NAME                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+mysql-pv-claim       Bound    pvc-9b04185f-acbe-45f7-bee2-6681b5121f1f   1Gi        RWO            gp3-csi        <unset>                 79s
+wordpress-pv-claim   Bound    pvc-0e4cc4f0-a142-4a8e-98ef-e44f3df2f3ab   1Gi        RWO            gp3-csi        <unset>                 42s
+
+OK: PVC data transferred to target (source app left scaled to 0 = cutover)
+
+############################################################
+# STEP 4: apply crane output to the TARGET
+############################################################
+
+== context ==
+kubeconfig: /home/maufart/mig/test-day-v0.11/kubeconfig-tgt
+server:     https://api.tgt-cluster.example.com:6443
+namespace:  wordpress
+
+== target PVCs (must already exist, from 07-transfer-pvc.sh) ==
+NAME                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+mysql-pv-claim       Bound    pvc-9b04185f-acbe-45f7-bee2-6681b5121f1f   1Gi        RWO            gp3-csi        <unset>                 79s
+wordpress-pv-claim   Bound    pvc-0e4cc4f0-a142-4a8e-98ef-e44f3df2f3ab   1Gi        RWO            gp3-csi        <unset>                 42s
+
+== apply crane output ==
+Warning: resource serviceaccounts/builder is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by oc apply. oc apply should only be used on resources created declaratively by either oc create --save-config or oc apply. The missing annotation will be patched automatically.
+serviceaccount/builder configured
+Warning: resource serviceaccounts/deployer is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by oc apply. oc apply should only be used on resources created declaratively by either oc create --save-config or oc apply. The missing annotation will be patched automatically.
+serviceaccount/deployer configured
+Warning: resource rolebindings/system:deployers is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by oc apply. oc apply should only be used on resources created declaratively by either oc create --save-config or oc apply. The missing annotation will be patched automatically.
+rolebinding.rbac.authorization.k8s.io/system:deployers configured
+Warning: resource rolebindings/system:image-builders is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by oc apply. oc apply should only be used on resources created declaratively by either oc create --save-config or oc apply. The missing annotation will be patched automatically.
+rolebinding.rbac.authorization.k8s.io/system:image-builders configured
+Warning: resource rolebindings/system:image-pullers is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by oc apply. oc apply should only be used on resources created declaratively by either oc create --save-config or oc apply. The missing annotation will be patched automatically.
+rolebinding.rbac.authorization.k8s.io/system:image-pullers configured
+configmap/nginx-config created
+Warning: resource configmaps/openshift-service-ca.crt is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by oc apply. oc apply should only be used on resources created declaratively by either oc create --save-config or oc apply. The missing annotation will be patched automatically.
+configmap/openshift-service-ca.crt configured
+secret/wordpress-secrets-kdfk5f65bm created
+service/wordpress created
+service/wordpress-mysql created
+deployment.apps/wordpress created
+deployment.apps/wordpress-mysql created
+job.batch/wordpress-install created
+
+== wait for readiness ==
+deployment.apps/wordpress-mysql condition met
+deployment.apps/wordpress condition met
+error: timed out waiting for the condition on jobs/wordpress-install
+
+== resources ==
+Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable no sooner than v6.0+
+NAME                                  READY   STATUS    RESTARTS   AGE
+pod/wordpress-776749495c-6fqkc        2/2     Running   0          5m8s
+pod/wordpress-mysql-78cf79cc4-ctpfj   1/1     Running   0          5m8s
+
+NAME                      TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
+service/wordpress         LoadBalancer   172.30.43.209   a40f49a4b9c644b87821cd83003ea575-1375354876.us-east-1.elb.amazonaws.com   80:31097/TCP   5m10s
+service/wordpress-mysql   ClusterIP      172.30.17.205   <none>                                                                    3306/TCP       5m10s
+
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/wordpress         1/1     1            1           5m10s
+deployment.apps/wordpress-mysql   1/1     1            1           5m9s
+
+NAME                                        DESIRED   CURRENT   READY   AGE
+replicaset.apps/wordpress-776749495c        1         1         1       5m9s
+replicaset.apps/wordpress-mysql-78cf79cc4   1         1         1       5m9s
+
+NAME                          STATUS      COMPLETIONS   DURATION   AGE
+job.batch/wordpress-install   Suspended   0/1                      5m10s
+
+NAME                                       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/mysql-pv-claim       Bound    pvc-9b04185f-acbe-45f7-bee2-6681b5121f1f   1Gi        RWO            gp3-csi        <unset>                 6m36s
+persistentvolumeclaim/wordpress-pv-claim   Bound    pvc-0e4cc4f0-a142-4a8e-98ef-e44f3df2f3ab   1Gi        RWO            gp3-csi        <unset>                 5m59s
+
+OK: application deployed to target. Validate with:
+   KUBECONFIG=/home/maufart/mig/test-day-v0.11/kubeconfig-tgt /home/maufart/mig/test-day-v0.11/scripts/04-validate-app.sh
+
+############################################################
+# STEP 5: validate the TARGET app (exact seed #11428)
+############################################################
+
+== context ==
+kubeconfig: /home/maufart/mig/test-day-v0.11/kubeconfig-tgt
+server:     https://api.tgt-cluster.example.com:6443
+namespace:  wordpress
+
+== resolve WordPress seed ID ==
+seed id: 11428 (from environment)
+
+== run upstream validate.sh ==
+# Validating WordPress service
+# Using kubectl context: default/api-octl-mman-4dfb891-219-mg-dog8code-com:6443/kube:admin
+
+Checking MySQL deployment status...
+Waiting for deployment 'wordpress-mysql' to be ready...
+deployment.apps/wordpress-mysql condition met
+✓ PASSED: Deployment 'wordpress-mysql' is ready
+Checking WordPress deployment status...
+Waiting for deployment 'wordpress' to be ready...
+deployment.apps/wordpress condition met
+✓ PASSED: Deployment 'wordpress' is ready
+Checking MySQL service presence...
+✓ PASSED: Service 'wordpress-mysql' exists
+Checking WordPress service presence...
+✓ PASSED: Service 'wordpress' exists
+Starting port-forward on port 18081...
+Waiting for port-forward to be ready...
+Forwarding from 127.0.0.1:18081 -> 8080
+Forwarding from [::1]:18081 -> 8080
+Performing HTTP request to http://127.0.0.1:18081/...
+Handling connection for 18081
+HTTP Status: 200
+✓ PASSED: HTTP status is 200
+✓ PASSED: Found 'Hello from k8s' in HTML content
+✓ PASSED: Found _some_ 'Sample post #' in HTML content
+✓ PASSED: Found exact '#11428' in HTML content
+
+✓ All validation checks passed!
+
+Stopping port-forward (PID: 67682)...
+
+############################################################
+# MIGRATION COMPLETE
+############################################################
+
+Source seed #11428 served by the target => data migrated intact.
+Finished — 2026-08-31T11:44:55+02:00

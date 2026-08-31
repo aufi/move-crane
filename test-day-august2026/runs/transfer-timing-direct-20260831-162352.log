@@ -1,0 +1,3846 @@
+== contexts ==
+src -> https://api.src-cluster.example.com:6443
+tgt -> https://api.tgt-cluster.example.com:6443
+
+== 1) ensure target namespace 'wp-timing' ==
+namespace/wp-timing created
+
+== 2) scale down source app (release RWO volumes, consistent copy) ==
+deployment.apps/wordpress scaled
+deployment.apps/wordpress-mysql scaled
+waiting for wordpress pods to terminate...
+deployment "wordpress" successfully rolled out
+waiting for wordpress-mysql pods to terminate...
+deployment "wordpress-mysql" successfully rolled out
+pod/wordpress-mysql-8ddcc48d9-4xzpb condition met
+source pods:
+NAME                      READY   STATUS      RESTARTS   AGE
+wordpress-install-b94w4   0/1     Completed   0          110s
+
+== 3) transfer PVCs (direct rsync over route), RUNS=2 ==
+
+########## transfer run 1/2 ##########
+
+--- transfer-pvc: mysql-pv-claim (run 1/2) ---
++ crane transfer-pvc --source-context src --destination-context tgt --pvc-name mysql-pv-claim:mysql-pv-claim --pvc-namespace wp-timing:wp-timing --endpoint route --dest-storage-class gp3-csi --dest-storage-requests 1Gi --verify
+time="2026-08-31T16:23:57+02:00" level=info msg="Starting PVC transfer: wp-timing/mysql-pv-claim -> wp-timing/mysql-pv-claim"
+
+crane transfer-pvc
+source context:      src
+destination context: tgt
+PVC:                 wp-timing/mysql-pv-claim -> wp-timing/mysql-pv-claim
+endpoint:            route
+
+time="2026-08-31T16:23:57+02:00" level=info msg="Phase 1: Reading source PVC"
+[1/7] Reading source PVC ...
+[1/7] Reading source PVC ... ok
+time="2026-08-31T16:23:58+02:00" level=info msg="Phase 2: Creating destination PVC"
+[2/7] Creating destination PVC ...
+[2/7] Creating destination PVC ... ok
+time="2026-08-31T16:24:00+02:00" level=info msg="Phase 3: Creating endpoint (route)"
+[3/7] Creating endpoint (route) ...
+{"level":"info","logger":"transfer-pvc","msg":"endpoint with","port":6443,"route":"{\"Namespace\":\"wp-timing\",\"Name\":\"mysql-pv-claim\"}","time":"2026-08-31T16:24:00+02:00","type":"EndpointTypePassthrough"}
+[3/7] Creating endpoint (route) ... ok
+time="2026-08-31T16:24:01+02:00" level=info msg="Phase 4: Waiting for endpoint healthy"
+[4/7] Waiting for endpoint healthy ...
+[4/7] Waiting for endpoint healthy ... ok
+time="2026-08-31T16:24:07+02:00" level=info msg="Phase 5: Setting up secure tunnel and server"
+[5/7] Setting up secure tunnel and server ...
+{"level":"info","logger":"transfer-pvc","msg":"generating new certificate bundle","time":"2026-08-31T16:24:07+02:00","transportServer":"{\"Namespace\":\"wp-timing\",\"Name\":\"mysql-pv-claim\"}"}
+  rsync server not ready, retrying...
+  rsync server not ready, retrying...
+[5/7] Setting up secure tunnel and server ... ok
+time="2026-08-31T16:24:25+02:00" level=info msg="Phase 6: Copying data (rsync)"
+[6/7] Copying data (rsync) ...
+time="2026-08-31T16:24:26+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:24:27+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:24:28+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:24:29+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:24:30+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:24:31+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:24:32+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:24:33+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:24:34+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+Status:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	45%
+  Transferred:	90.59 M
+  Rate:		340.00 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	45%
+  Transferred:	90.59 M
+  Rate:		340.00 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	45%
+  Transferred:	90.59 M
+  Rate:		340.00 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	45%
+  Transferred:	90.59 M
+  Rate:		340.00 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	98%
+  Transferred:	195.45 M
+  Rate:		334.58 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	98%
+  Transferred:	196.08 M
+  Rate:		335.06 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		250.28 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	198.96 M
+  Rate:		249.95 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Succeeded
+Progress:
+  Percentage:	100%
+  Transferred:	198.96 M
+  Rate:		249.95 MB/s
+  Files:
+    Sent:	360
+    Total:	180
+Elapsed:	1s
+[6/7] Copying data (rsync) ... finished  exit=0
+time="2026-08-31T16:24:36+02:00" level=info msg="Phase 7: Cleanup"
+[7/7] Cleaning up temporary resources ...
+[7/7] Cleaning up temporary resources ... ok
+time="2026-08-31T16:24:38+02:00" level=info msg="PVC transfer complete: wp-timing/mysql-pv-claim -> wp-timing/mysql-pv-claim"
+
+Summary
+-------
+PVC data copy: succeeded
+duration:      41s
+Done.
+
+--- transfer-pvc: wordpress-pv-claim (run 1/2) ---
++ crane transfer-pvc --source-context src --destination-context tgt --pvc-name wordpress-pv-claim:wordpress-pv-claim --pvc-namespace wp-timing:wp-timing --endpoint route --dest-storage-class gp3-csi --dest-storage-requests 1Gi --verify
+time="2026-08-31T16:24:38+02:00" level=info msg="Starting PVC transfer: wp-timing/wordpress-pv-claim -> wp-timing/wordpress-pv-claim"
+
+crane transfer-pvc
+source context:      src
+destination context: tgt
+PVC:                 wp-timing/wordpress-pv-claim -> wp-timing/wordpress-pv-claim
+endpoint:            route
+
+time="2026-08-31T16:24:38+02:00" level=info msg="Phase 1: Reading source PVC"
+[1/7] Reading source PVC ...
+[1/7] Reading source PVC ... ok
+time="2026-08-31T16:24:39+02:00" level=info msg="Phase 2: Creating destination PVC"
+[2/7] Creating destination PVC ...
+[2/7] Creating destination PVC ... ok
+time="2026-08-31T16:24:40+02:00" level=info msg="Phase 3: Creating endpoint (route)"
+[3/7] Creating endpoint (route) ...
+{"level":"info","logger":"transfer-pvc","msg":"endpoint with","port":6443,"route":"{\"Namespace\":\"wp-timing\",\"Name\":\"wordpress-pv-claim\"}","time":"2026-08-31T16:24:40+02:00","type":"EndpointTypePassthrough"}
+[3/7] Creating endpoint (route) ... ok
+time="2026-08-31T16:24:41+02:00" level=info msg="Phase 4: Waiting for endpoint healthy"
+[4/7] Waiting for endpoint healthy ...
+[4/7] Waiting for endpoint healthy ... ok
+time="2026-08-31T16:24:46+02:00" level=info msg="Phase 5: Setting up secure tunnel and server"
+[5/7] Setting up secure tunnel and server ...
+{"level":"info","logger":"transfer-pvc","msg":"generating new certificate bundle","time":"2026-08-31T16:24:46+02:00","transportServer":"{\"Namespace\":\"wp-timing\",\"Name\":\"wordpress-pv-claim\"}"}
+  rsync server not ready, retrying...
+  rsync server not ready, retrying...
+[5/7] Setting up secure tunnel and server ... ok
+time="2026-08-31T16:25:04+02:00" level=info msg="Phase 6: Copying data (rsync)"
+[6/7] Copying data (rsync) ...
+time="2026-08-31T16:25:06+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:07+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:08+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:09+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:10+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:11+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:12+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:13+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:14+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:25:15+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+Status:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	0%
+  Transferred:	199.30 K
+  Rate:		189.82 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	9%
+  Transferred:	199.30 K
+  Rate:		9.58 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	25%
+  Transferred:	199.30 K
+  Rate:		19.41 MB/s
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	50%
+  Transferred:	199.30 K
+  Rate:		29.39 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	60%
+  Transferred:	199.30 K
+  Rate:		29.74 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	60%
+  Transferred:	199.30 K
+  Rate:		29.74 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	60%
+  Transferred:	199.30 K
+  Rate:		29.74 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	60%
+  Transferred:	199.30 K
+  Rate:		29.74 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	74%
+  Transferred:	199.30 K
+  Rate:		27.31 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	88%
+  Transferred:	199.30 K
+  Rate:		32.03 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	88%
+  Transferred:	199.30 K
+  Rate:		32.03 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		31.60 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		31.61 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		29.82 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		30.17 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		30.10 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		29.25 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.84 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.82 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.92 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.91 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.91 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.91 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.91 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.91 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.68 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.32 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.34 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.34 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.34 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.30 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		21.48 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.79 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.80 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.58 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.48 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.44 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.44 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.33 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.33 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.33 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.26 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.26 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.07 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.07 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.07 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.07 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.04 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.94 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.94 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.94 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.85 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.76 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.74 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.74 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.61 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.32 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.32 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.30 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.30 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.12 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.99 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		19.00 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.45 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.45 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.45 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.45 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.45 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.45 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.33 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.25 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.35 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.77 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.81 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.03 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.03 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.02 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		18.01 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.39 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.23 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.22 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.04 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.14 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.18 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.18 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.98 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.98 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.98 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.98 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.98 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.98 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.98 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.03 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.96 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.97 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.97 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.91 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		15.90 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.17 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.17 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.20 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.22 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.57 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.57 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.57 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.57 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.57 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.56 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.56 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.56 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.56 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.59 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		16.78 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.11 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.47 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.47 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.47 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.44 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.44 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.44 MB/s
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.44 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		17.44 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		20.67 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		21.61 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		21.61 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.15 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.15 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.15 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.44 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		22.78 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.21 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.44 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.75 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.75 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.90 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.92 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.91 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		24.93 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		25.85 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		25.87 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		25.87 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		25.87 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		25.87 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.16 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.24 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.30 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.30 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.30 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.30 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	92%
+  Transferred:	199.30 K
+  Rate:		26.53 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	94%
+  Transferred:	199.30 K
+  Rate:		27.08 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	94%
+  Transferred:	199.30 K
+  Rate:		27.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	94%
+  Transferred:	199.30 K
+  Rate:		27.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	94%
+  Transferred:	199.30 K
+  Rate:		27.18 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	94%
+  Transferred:	199.30 K
+  Rate:		27.18 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	94%
+  Transferred:	199.30 K
+  Rate:		27.18 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	95%
+  Transferred:	199.30 K
+  Rate:		27.24 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	96%
+  Transferred:	199.30 K
+  Rate:		27.54 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	96%
+  Transferred:	199.30 K
+  Rate:		27.54 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	97%
+  Transferred:	199.30 K
+  Rate:		27.87 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	97%
+  Transferred:	199.30 K
+  Rate:		27.87 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	97%
+  Transferred:	199.30 K
+  Rate:		27.90 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	98%
+  Transferred:	199.30 K
+  Rate:		27.91 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	98%
+  Transferred:	199.30 K
+  Rate:		27.91 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	98%
+  Transferred:	199.30 K
+  Rate:		28.07 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	98%
+  Transferred:	199.30 K
+  Rate:		28.05 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	199.30 K
+  Rate:		28.09 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	199.30 K
+  Rate:		28.23 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	199.30 K
+  Rate:		28.23 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Transfer in-progress
+Progress:
+  Percentage:	99%
+  Transferred:	199.30 K
+  Rate:		28.25 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.30 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.30 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.30 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.29 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.29 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.29 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.28 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.28 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.28 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.28 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.28 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.26 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.26 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.26 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.26 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.26 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.25 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.25 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.24 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.22 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.21 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.20 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.20 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.20 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Finishing up
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Succeeded
+Progress:
+  Percentage:	100%
+  Transferred:	199.30 K
+  Rate:		28.19 MB/s
+  Files:
+    Sent:	6704
+    Total:	3352
+Elapsed:	3s
+[6/7] Copying data (rsync) ... finished  exit=0
+time="2026-08-31T16:25:19+02:00" level=info msg="Phase 7: Cleanup"
+[7/7] Cleaning up temporary resources ...
+[7/7] Cleaning up temporary resources ... ok
+time="2026-08-31T16:25:20+02:00" level=info msg="PVC transfer complete: wp-timing/wordpress-pv-claim -> wp-timing/wordpress-pv-claim"
+
+Summary
+-------
+PVC data copy: succeeded
+duration:      43s
+Done.
+>> run 1 duration: 83.8s
+
+########## transfer run 2/2 ##########
+
+--- transfer-pvc: mysql-pv-claim (run 2/2) ---
++ crane transfer-pvc --source-context src --destination-context tgt --pvc-name mysql-pv-claim:mysql-pv-claim --pvc-namespace wp-timing:wp-timing --endpoint route --dest-storage-class gp3-csi --dest-storage-requests 1Gi --verify
+time="2026-08-31T16:25:21+02:00" level=info msg="Starting PVC transfer: wp-timing/mysql-pv-claim -> wp-timing/mysql-pv-claim"
+
+crane transfer-pvc
+source context:      src
+destination context: tgt
+PVC:                 wp-timing/mysql-pv-claim -> wp-timing/mysql-pv-claim
+endpoint:            route
+
+time="2026-08-31T16:25:21+02:00" level=info msg="Phase 1: Reading source PVC"
+[1/7] Reading source PVC ...
+[1/7] Reading source PVC ... ok
+time="2026-08-31T16:25:22+02:00" level=info msg="Phase 2: Creating destination PVC"
+[2/7] Creating destination PVC ...
+[2/7] Creating destination PVC ... ok
+time="2026-08-31T16:25:25+02:00" level=info msg="Phase 3: Creating endpoint (route)"
+[3/7] Creating endpoint (route) ...
+{"level":"info","logger":"transfer-pvc","msg":"endpoint with","port":6443,"route":"{\"Namespace\":\"wp-timing\",\"Name\":\"mysql-pv-claim\"}","time":"2026-08-31T16:25:25+02:00","type":"EndpointTypePassthrough"}
+[3/7] Creating endpoint (route) ... ok
+time="2026-08-31T16:25:25+02:00" level=info msg="Phase 4: Waiting for endpoint healthy"
+[4/7] Waiting for endpoint healthy ...
+[4/7] Waiting for endpoint healthy ... ok
+time="2026-08-31T16:25:31+02:00" level=info msg="Phase 5: Setting up secure tunnel and server"
+[5/7] Setting up secure tunnel and server ...
+{"level":"info","logger":"transfer-pvc","msg":"generating new certificate bundle","time":"2026-08-31T16:25:31+02:00","transportServer":"{\"Namespace\":\"wp-timing\",\"Name\":\"mysql-pv-claim\"}"}
+  rsync server not ready, retrying...
+[5/7] Setting up secure tunnel and server ... ok
+time="2026-08-31T16:25:44+02:00" level=info msg="Phase 6: Copying data (rsync)"
+[6/7] Copying data (rsync) ...
+time="2026-08-31T16:25:46+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:25:47+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:25:48+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:25:49+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+time="2026-08-31T16:25:50+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-650b166f93 is not ready, retrying..."
+Status:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Succeeded
+Progress:
+  Percentage:	100%
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+  Files:
+    Sent:	0
+    Total:	180
+Elapsed:	1s
+[6/7] Copying data (rsync) ... finished  exit=0
+time="2026-08-31T16:25:59+02:00" level=info msg="Phase 7: Cleanup"
+[7/7] Cleaning up temporary resources ...
+[7/7] Cleaning up temporary resources ... ok
+time="2026-08-31T16:26:01+02:00" level=info msg="PVC transfer complete: wp-timing/mysql-pv-claim -> wp-timing/mysql-pv-claim"
+
+Summary
+-------
+PVC data copy: succeeded
+duration:      40s
+Done.
+
+--- transfer-pvc: wordpress-pv-claim (run 2/2) ---
++ crane transfer-pvc --source-context src --destination-context tgt --pvc-name wordpress-pv-claim:wordpress-pv-claim --pvc-namespace wp-timing:wp-timing --endpoint route --dest-storage-class gp3-csi --dest-storage-requests 1Gi --verify
+time="2026-08-31T16:26:01+02:00" level=info msg="Starting PVC transfer: wp-timing/wordpress-pv-claim -> wp-timing/wordpress-pv-claim"
+
+crane transfer-pvc
+source context:      src
+destination context: tgt
+PVC:                 wp-timing/wordpress-pv-claim -> wp-timing/wordpress-pv-claim
+endpoint:            route
+
+time="2026-08-31T16:26:01+02:00" level=info msg="Phase 1: Reading source PVC"
+[1/7] Reading source PVC ...
+[1/7] Reading source PVC ... ok
+time="2026-08-31T16:26:02+02:00" level=info msg="Phase 2: Creating destination PVC"
+[2/7] Creating destination PVC ...
+[2/7] Creating destination PVC ... ok
+time="2026-08-31T16:26:03+02:00" level=info msg="Phase 3: Creating endpoint (route)"
+[3/7] Creating endpoint (route) ...
+{"level":"info","logger":"transfer-pvc","msg":"endpoint with","port":6443,"route":"{\"Namespace\":\"wp-timing\",\"Name\":\"wordpress-pv-claim\"}","time":"2026-08-31T16:26:03+02:00","type":"EndpointTypePassthrough"}
+[3/7] Creating endpoint (route) ... ok
+time="2026-08-31T16:26:03+02:00" level=info msg="Phase 4: Waiting for endpoint healthy"
+[4/7] Waiting for endpoint healthy ...
+[4/7] Waiting for endpoint healthy ... ok
+time="2026-08-31T16:26:09+02:00" level=info msg="Phase 5: Setting up secure tunnel and server"
+[5/7] Setting up secure tunnel and server ...
+{"level":"info","logger":"transfer-pvc","msg":"generating new certificate bundle","time":"2026-08-31T16:26:09+02:00","transportServer":"{\"Namespace\":\"wp-timing\",\"Name\":\"wordpress-pv-claim\"}"}
+[5/7] Setting up secure tunnel and server ... ok
+time="2026-08-31T16:26:17+02:00" level=info msg="Phase 6: Copying data (rsync)"
+[6/7] Copying data (rsync) ...
+time="2026-08-31T16:26:19+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:26:20+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:26:21+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:26:22+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:26:23+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:26:24+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:26:25+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+time="2026-08-31T16:26:26+02:00" level=warning msg="Container rsync in pod wp-timing/rsync-client-0a85f44830 is not ready, retrying..."
+Status:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	0s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	1s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	2s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	<unavailable>
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+Elapsed:	3s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+Elapsed:	4s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+Elapsed:	4s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+Elapsed:	4s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Preparing
+Progress:
+  Percentage:	<unavailable>
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+Elapsed:	4s
+[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2KStatus:	Succeeded
+Progress:
+  Percentage:	100%
+  Transferred:	0.00 bytes
+  Rate:		<unavailable>
+  Files:
+    Sent:	0
+    Total:	3352
+Elapsed:	5s
+[6/7] Copying data (rsync) ... finished  exit=0
+time="2026-08-31T16:26:32+02:00" level=info msg="Phase 7: Cleanup"
+[7/7] Cleaning up temporary resources ...
+[7/7] Cleaning up temporary resources ... ok
+time="2026-08-31T16:26:33+02:00" level=info msg="PVC transfer complete: wp-timing/wordpress-pv-claim -> wp-timing/wordpress-pv-claim"
+
+Summary
+-------
+PVC data copy: succeeded
+duration:      33s
+Done.
+>> run 2 duration: 72.9s
+
+== target PVCs after transfer ==
+NAME                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+mysql-pv-claim       Bound    pvc-e1d75733-bff3-40ff-ac30-e988fbf204cf   1Gi        RWO            gp3-csi        <unset>                 2m34s
+wordpress-pv-claim   Bound    pvc-b5c4b812-5cf5-4da1-997c-cd401fc590b2   1Gi        RWO            gp3-csi        <unset>                 114s
+
+== timing summary (direct rsync) ==
+  run 1: 83.8s
+  run 2: 72.9s
+OK: second run faster (83.8s -> 72.9s); incremental rsync copied only changes
+
+OK: PVC data transferred to target (source app left scaled to 0 = cutover)
+SCRIPT_EXIT: 0

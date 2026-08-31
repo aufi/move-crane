@@ -1,0 +1,20 @@
+# Cluster credentials and session files — never commit
+kubeconfig
+kubeconfig-*
+*.kubeconfig
+
+# Local credential/env files
+.env
+.env.*
+*.env
+
+# rclone / cloud storage credentials
+rclone.conf
+*.rclone.conf
+
+# Keys and certs
+*.pem
+*.key
+*_rsa
+*.p12
+*.pfx
