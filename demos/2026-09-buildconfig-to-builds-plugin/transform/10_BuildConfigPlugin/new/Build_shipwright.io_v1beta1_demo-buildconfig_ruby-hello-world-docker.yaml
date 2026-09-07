@@ -1,0 +1,5 @@
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: ruby-hello-world-docker
+  namespace: demo-buildconfig

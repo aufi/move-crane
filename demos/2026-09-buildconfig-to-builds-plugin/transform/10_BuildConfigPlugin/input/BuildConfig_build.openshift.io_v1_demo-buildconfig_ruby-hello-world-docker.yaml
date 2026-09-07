@@ -1,0 +1,78 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"build.openshift.io/v1","kind":"BuildConfig","metadata":{"annotations":{},"labels":{"app":"ruby-hello-world","build-type":"docker"},"name":"ruby-hello-world-docker","namespace":"demo-buildconfig"},"spec":{"output":{"to":{"kind":"ImageStreamTag","name":"ruby-hello-world:latest"}},"source":{"git":{"ref":"master","uri":"https://github.com/openshift/ruby-hello-world.git"},"type":"Git"},"strategy":{"dockerStrategy":{"dockerfilePath":"Dockerfile"},"type":"Docker"},"triggers":[{"type":"ConfigChange"}]}}
+  creationTimestamp: "2026-09-07T07:21:34Z"
+  generation: 2
+  labels:
+    app: ruby-hello-world
+    build-type: docker
+  managedFields:
+  - apiVersion: build.openshift.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:labels:
+          .: {}
+          f:app: {}
+          f:build-type: {}
+      f:spec:
+        f:output:
+          f:to: {}
+        f:runPolicy: {}
+        f:source:
+          f:git:
+            .: {}
+            f:ref: {}
+            f:uri: {}
+          f:type: {}
+        f:strategy:
+          f:dockerStrategy:
+            .: {}
+            f:dockerfilePath: {}
+          f:type: {}
+        f:triggers: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2026-09-07T07:21:34Z"
+  - apiVersion: build.openshift.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:lastVersion: {}
+    manager: openshift-apiserver
+    operation: Update
+    time: "2026-09-07T07:21:35Z"
+  name: ruby-hello-world-docker
+  namespace: demo-buildconfig
+  resourceVersion: "133037"
+  uid: df2c09de-0323-4c82-bf9e-1468088c9bfa
+spec:
+  failedBuildsHistoryLimit: 5
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ruby-hello-world:latest
+  postCommit: {}
+  resources: {}
+  runPolicy: Serial
+  source:
+    git:
+      ref: master
+      uri: https://github.com/openshift/ruby-hello-world.git
+    type: Git
+  strategy:
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+    type: Docker
+  successfulBuildsHistoryLimit: 5
+  triggers:
+  - type: ConfigChange
+status:
+  lastVersion: 1

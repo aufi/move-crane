@@ -1,0 +1,23 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: ruby-hello-world-docker
+  labels:
+    app: ruby-hello-world
+    build-type: docker
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ruby-hello-world:latest
+  source:
+    type: Git
+    git:
+      uri: https://github.com/openshift/ruby-hello-world.git
+      ref: master
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  triggers:
+  - type: ConfigChange

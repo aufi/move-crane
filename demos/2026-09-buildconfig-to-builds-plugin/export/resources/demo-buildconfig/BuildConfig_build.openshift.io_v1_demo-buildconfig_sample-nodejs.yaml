@@ -1,0 +1,81 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"build.openshift.io/v1","kind":"BuildConfig","metadata":{"annotations":{},"labels":{"app":"sample-nodejs"},"name":"sample-nodejs","namespace":"demo-buildconfig"},"spec":{"failedBuildsHistoryLimit":3,"output":{"to":{"kind":"ImageStreamTag","name":"sample-nodejs:latest"}},"runPolicy":"Serial","source":{"contextDir":"source-build","git":{"ref":"main","uri":"https://github.com/shipwright-io/sample-nodejs"},"type":"Git"},"strategy":{"sourceStrategy":{"env":[{"name":"NPM_MIRROR","value":"https://registry.npmjs.org"}],"from":{"kind":"ImageStreamTag","name":"nodejs:18-ubi8","namespace":"openshift"}},"type":"Source"},"successfulBuildsHistoryLimit":3,"triggers":[{"imageChange":{"paused":true},"type":"ImageChange"}]}}
+  creationTimestamp: "2026-09-04T14:31:48Z"
+  generation: 2
+  labels:
+    app: sample-nodejs
+  managedFields:
+  - apiVersion: build.openshift.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:labels:
+          .: {}
+          f:app: {}
+      f:spec:
+        f:failedBuildsHistoryLimit: {}
+        f:output:
+          f:to: {}
+        f:runPolicy: {}
+        f:source:
+          f:contextDir: {}
+          f:git:
+            .: {}
+            f:ref: {}
+            f:uri: {}
+          f:type: {}
+        f:strategy:
+          f:sourceStrategy:
+            .: {}
+            f:env: {}
+            f:from: {}
+          f:type: {}
+        f:successfulBuildsHistoryLimit: {}
+        f:triggers: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2026-09-07T07:30:22Z"
+  name: sample-nodejs
+  namespace: demo-buildconfig
+  resourceVersion: "137454"
+  uid: 6d8f78ce-c602-4d32-b5bb-862b380a48f1
+spec:
+  failedBuildsHistoryLimit: 3
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: sample-nodejs:latest
+  postCommit: {}
+  resources: {}
+  runPolicy: Serial
+  source:
+    contextDir: source-build
+    git:
+      ref: main
+      uri: https://github.com/shipwright-io/sample-nodejs
+    type: Git
+  strategy:
+    sourceStrategy:
+      env:
+      - name: NPM_MIRROR
+        value: https://registry.npmjs.org
+      from:
+        kind: ImageStreamTag
+        name: nodejs:18-ubi8
+        namespace: openshift
+    type: Source
+  successfulBuildsHistoryLimit: 3
+  triggers:
+  - imageChange:
+      paused: true
+    type: ImageChange
+status:
+  lastVersion: 0

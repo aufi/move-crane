@@ -3,4 +3,3 @@ stages:
     optionals:
       add-annotations: "migrated-by=crane,migration-demo=instructions-file"
       strip-default-rbac: "true"
-  - CustomEdits

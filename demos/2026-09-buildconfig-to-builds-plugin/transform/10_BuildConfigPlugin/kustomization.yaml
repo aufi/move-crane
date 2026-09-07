@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patches:
+- path: patches/demo-buildconfig--shipwright.io-v1beta1--Build--ruby-hello-world-docker.patch.yaml
+  target:
+    group: shipwright.io
+    kind: Build
+    name: ruby-hello-world-docker
+    namespace: demo-buildconfig
+    version: v1beta1
+- path: patches/demo-buildconfig--shipwright.io-v1beta1--Build--sample-nodejs-webhook.patch.yaml
+  target:
+    group: shipwright.io
+    kind: Build
+    name: sample-nodejs-webhook
+    namespace: demo-buildconfig
+    version: v1beta1
+- path: patches/demo-buildconfig--shipwright.io-v1beta1--Build--sample-nodejs.patch.yaml
+  target:
+    group: shipwright.io
+    kind: Build
+    name: sample-nodejs
+    namespace: demo-buildconfig
+    version: v1beta1
+resources:
+- new/Build_shipwright.io_v1beta1_demo-buildconfig_ruby-hello-world-docker.yaml
+- new/Build_shipwright.io_v1beta1_demo-buildconfig_sample-nodejs-webhook.yaml
+- new/Build_shipwright.io_v1beta1_demo-buildconfig_sample-nodejs.yaml
+
+# Whiteout resources are written to resources/ for complete snapshot
+# but excluded from active resources list above:
+# - input/BuildConfig_build.openshift.io_v1_demo-buildconfig_ruby-hello-world-docker.yaml
+# - input/BuildConfig_build.openshift.io_v1_demo-buildconfig_sample-nodejs-webhook.yaml
+# - input/BuildConfig_build.openshift.io_v1_demo-buildconfig_sample-nodejs.yaml

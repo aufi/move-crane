@@ -1,0 +1,35 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: sample-nodejs-webhook
+  labels:
+    app: sample-nodejs-webhook
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: sample-nodejs-webhook:latest
+  source:
+    type: Git
+    git:
+      uri: https://github.com/shipwright-io/sample-nodejs
+      ref: main
+    contextDir: source-build
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: nodejs:18-ubi8
+        namespace: openshift
+      env:
+      - name: NPM_MIRROR
+        value: https://registry.npmjs.org
+  triggers:
+  - type: ImageChange
+    imageChange:
+      paused: true
+  - type: GitHub
+    github:
+      secretReference:
+        name: github-webhook-secret
