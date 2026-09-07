@@ -2,3 +2,4 @@ stages:
   - KubernetesPlugin
   - OpenShiftPlugin
   - BuildConfigPlugin
+  - CustomEdits

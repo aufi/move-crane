@@ -23,12 +23,52 @@ For the complete Crane workflow, see the
 scripts/transform-with-instructions.sh
 ```
 
-The script deploys the WordPress sample into the `instructions-demo` namespace,
-exports all of its resources, runs the declarative transform, and renders the
-result to `output/output.yaml`. It does not apply the rendered output to a
-target cluster.
+The script deploys the WordPress sample into the
+`wordpress-instructions-demo` namespace, exports all of its resources, runs the
+declarative transform, and renders the result to `output/output.yaml`. It does
+not apply the rendered output to a target cluster.
 The WordPress deploy script creates or reuses its generated credentials in
 `test-day-august2026/test-app/wordpress/.env`.
+
+### Demo Commands
+
+Run these commands from this directory. They use separate transform directories
+so the results of the alternatives can be compared without overwriting each
+other.
+
+```bash
+NAMESPACE=wordpress-instructions-demo
+
+# 1. Export the WordPress source namespace.
+mta-ops export -n "${NAMESPACE}" --export-dir export --overwrite
+
+# 2. Transform with mta-ops defaults and no instructions file.
+mta-ops transform --export-dir export --transform-dir transform-default --overwrite
+
+# 3. Transform with an instructions file that explicitly runs every built-in plugin.
+mta-ops transform \
+  --export-dir export \
+  --transform-dir transform-all-plugins \
+  --instructions-file instructions-all-plugins.yaml \
+  --overwrite
+
+# 4. Create a CustomEdits stage for reviewed, custom labels.
+mta-ops transform \
+  --export-dir export \
+  --transform-dir transform-labels \
+  --instructions-file instructions.yaml \
+  --overwrite
+
+# 5. Render the variant containing the reviewed custom labels.
+mta-ops apply \
+  --transform-dir transform-labels \
+  --output-dir output \
+  --overwrite
+```
+
+Before step 5, add the required Kustomize label patch to
+`transform-labels/20_CustomEdits/`. `mta-ops` exposes `add-annotations`, but
+not an `add-labels` optional, so labels belong in this manual stage.
 
 ```text
 source namespace
@@ -50,5 +90,5 @@ multi-stage optional-flags reproducer is
 Clean up the source namespace when finished:
 
 ```bash
-oc delete namespace instructions-demo
+oc delete namespace wordpress-instructions-demo
 ```

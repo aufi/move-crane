@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NAMESPACE="${NAMESPACE:-instructions-demo}"
+NAMESPACE="${NAMESPACE:-wordpress-instructions-demo}"
 CRANE_BIN="${CRANE_BIN:-mta-ops}"
 WORDPRESS_DEPLOY_SCRIPT="${WORDPRESS_DEPLOY_SCRIPT:-${ROOT_DIR}/../../test-day-august2026/scripts/03-deploy-app-src.sh}"
 
