@@ -13,19 +13,19 @@ For example, an accepted `Ingress` without a matching ingress controller is not 
 
 ## Main Risk Groups
 
-### OpenShift-Specific Resources
+### Managed Kubernetes Resources Requiring an OCP Decision
 
-Migration from OCP to upstream or managed Kubernetes requires explicit decisions for at least these resources:
+Migration from managed Kubernetes to OCP 4 or OCP 5 requires explicit decisions for at least these resources and dependencies:
 
 | Resource | Typical target action |
 | --- | --- |
-| `route.openshift.io/Route` | Transform to `networking.k8s.io/Ingress` or Gateway API; assess TLS and passthrough manually |
-| `apps.openshift.io/DeploymentConfig` | Transform to `apps/v1/Deployment`; assess triggers and rollout semantics |
-| `build.openshift.io/BuildConfig` | Replace with external CI or a target build platform such as Shipwright |
-| `image.openshift.io/ImageStream` | Rewrite image references and provide image transfer or registry credentials |
-| `security.openshift.io/SecurityContextConstraints` | Do not transfer as an application resource; convert requirements to pod security context and target policy |
-| `template.openshift.io/Template` | Render before migration or replace with a Helm/Kustomize workflow |
-| `config.openshift.io/*` | Treat as cluster-managed and do not transfer with the application |
+| `networking.k8s.io/Ingress` | Transform to an OCP Route when semantics allow, or retain it only when a suitable target ingress controller exists |
+| Cloud load balancer annotations | Remove or map to supported OCP exposure settings |
+| Cloud workload identity annotations | Report an external identity prerequisite or remove them after credentials are redesigned |
+| Provider CSI and StorageClass references | Map to an OCP StorageClass by capabilities |
+| Provider-specific CRDs | Require compatible pre-existing target components or mark them non-portable |
+| External registry references | Validate target access and credentials or perform image synchronization |
+| Pod security assumptions | Validate against OCP SCC and namespace UID/GID behavior |
 
 Transformations must report properties whose semantics cannot be preserved.
 
@@ -42,11 +42,11 @@ Typical examples include:
 - provider-specific snapshot classes and topology parameters,
 - autoscaling or node-provisioning CRDs.
 
-When migrating to OCP, classify cloud IAM and external infrastructure as prerequisites or manual actions rather than copying them blindly.
+Classify cloud IAM and external infrastructure as prerequisites or manual actions rather than copying them blindly into OCP.
 
 ### Upstream API Version Skew
 
-For each source `apiVersion`, check:
+For each source `apiVersion`, check against the exact OCP target:
 
 - whether the target serves it,
 - whether the storage version is compatible,
@@ -54,7 +54,7 @@ For each source `apiVersion`, check:
 - removed and deprecated APIs between minor versions,
 - whether the API server can convert it or Crane must do so.
 
-OCP-specific gaps are summarized in [OCP 4.x compatibility gaps](../ocp-4x-compatibility.md).
+OCP 4-specific gaps are summarized in [OCP 4.x compatibility gaps](../ocp-4x-compatibility.md). OCP 5 evidence rules and likely impact areas are defined in [OCP_TARGET_VERSIONS.md](OCP_TARGET_VERSIONS.md).
 
 ### Existing Application CRDs and Controllers
 
@@ -79,15 +79,15 @@ A future preflight or discovery step should write a plain local file containing 
 formatVersion: 1
 findings:
   - resource:
-      apiVersion: route.openshift.io/v1
-      kind: Route
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
       namespace: example
       name: frontend
     classification: PlatformReplaceable
-    targetCapability: networking.k8s.io/v1/Ingress
+    targetCapability: discovered OCP exposure API
     severity: warning
     action: transform
-    reason: target cluster does not serve route.openshift.io/v1
+    reason: source Ingress requires conversion for the exact OCP target
 ```
 
 This is a regular YAML report stored on disk. It is not a Kubernetes manifest and must never be applied to a cluster. JSON and Markdown renderings may be generated from the same in-memory result.
@@ -102,18 +102,18 @@ Transformations must be:
 - safe to run repeatedly,
 - accompanied by a validation finding when semantics are lost.
 
-Provider-specific logic belongs in a separate CLI plugin only for genuinely provider-specific resources. It must not deploy an operator, CRD, or custom resource. Route-to-Ingress and general API version conversion should remain reusable.
+Provider-specific logic belongs in a separate CLI plugin only for genuinely provider-specific resources. It must not deploy an operator, CRD, or custom resource. Ingress-to-Route and general API version conversion should remain reusable.
 
 ## Minimum Test Catalog
 
 | Area | Source case | Target expectation |
 | --- | --- | --- |
-| Exposure | Route with edge, reencrypt, or passthrough TLS | Equivalent or explicit blocker |
-| Rollout | DeploymentConfig triggers and hooks | Deployment with documented differences |
-| Build | BuildConfig and ImageStream | External prerequisite or generated replacement |
-| Security | SCC-dependent non-root pod | Valid securityContext/PSA profile |
-| Identity | Cloud workload identity | Mapping or prerequisite |
-| Storage | Provider StorageClass | Capability-based target class |
+| Exposure | Ingress and cloud load balancer annotations | OCP Route equivalent or explicit blocker |
+| Rollout | Deployment or StatefulSet | Functional OCP workload with documented admission changes |
+| Registry | Cloud registry reference | Reachable image with valid target credentials |
+| Security | Source PSA-compatible non-root pod | Valid OCP securityContext and SCC admission |
+| Identity | Cloud workload identity | OCP mapping or external prerequisite |
+| Storage | Provider StorageClass | Capability-based OCP target class |
 | Existing CRD workload | CR, CRD, and webhook | Report compatible pre-existing target components or an external prerequisite |
 | Networking | Provider load balancer annotations | Removal, mapping, or warning |
 
@@ -122,6 +122,7 @@ Provider-specific logic belongs in a separate CLI plugin only for genuinely prov
 Preflight must fail when:
 
 - the target does not serve an API and no transformation exists,
+- the OCP target major has not been validated and a required platform contract is unknown,
 - a required CRD or controller is missing,
 - security or identity semantics cannot be converted safely,
 - target storage does not satisfy access mode, volume mode, or topology requirements,

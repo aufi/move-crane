@@ -2,17 +2,17 @@
 
 ## Second-Phase Goal
 
-After stabilizing the process on AKS, validate OCP 4 to EKS migrations in both directions. EKS validation must prove that the resulting solution is capability-based and not implicitly tied to Azure.
+After stabilizing the process on AKS, validate migrations from EKS into OCP 4 or OCP 5. EKS validation must prove that the resulting solution is capability-based and not implicitly tied to Azure. Each OCP major and minor is a separate target profile.
 
 ## Reference Profiles
 
-| Profile | Network | Exposure | Storage |
+| Source profile | Network | Workload exposure | Source storage |
 | --- | --- | --- | --- |
-| EKS-public | Publicly reachable endpoint | NGINX-compatible ingress | EBS CSI (RWO) |
-| EKS-private | Private endpoint/VPC | Private ingress or no direct path | EBS CSI and indirect S3-compatible transfer |
+| EKS-public | Public API and egress | Public Ingress or LoadBalancer resources | EBS CSI (RWO) |
+| EKS-private | Private endpoint/VPC with controlled egress | Private Ingress or LoadBalancer resources | EBS CSI and indirect S3-compatible fallback |
 | EKS-RWX | Public or private | Profile-dependent | EFS CSI (RWX) |
 
-AWS Load Balancer Controller and NGINX ingress controller are different implementations. The former alone does not prove compatibility with Crane's `nginx-ingress` endpoint.
+AWS Load Balancer Controller and NGINX ingress controller are different implementations. Their resources and annotations require different transformations when producing an OCP Route. Neither controller is used as the `transfer-pvc` target endpoint because OCP is always the target.
 
 ## EKS Discovery
 
@@ -28,14 +28,6 @@ In addition to the general process, determine:
 - optional CRDs such as `TargetGroupBinding`, ACK controllers, External Secrets, or autoscaling add-ons,
 - ECR access and AWS IAM dependencies.
 
-## OCP to EKS Risks
-
-- OpenShift resources require the same classification process as for AKS.
-- Route-to-Ingress conversion must not assume a specific AWS load balancer controller without discovery.
-- Map OCP RWO storage to EBS CSI by topology and performance requirements.
-- Map OCP RWX storage to EFS or another target filesystem only after checking POSIX and permission behavior.
-- The source OCP pod must reach the endpoint in the target VPC; otherwise use indirect transfer.
-
 ## EKS to OCP Risks
 
 - AWS-specific Service and Ingress annotations require removal or transformation.
@@ -43,17 +35,20 @@ In addition to the general process, determine:
 - IRSA and Pod Identity bindings do not become functional cloud identities on OCP.
 - Map EBS/EFS StorageClasses to OCP storage by capability.
 - ECR image references require network access and credentials or image synchronization.
+- Validate EKS Pod Security assumptions against OCP SCC and namespace-assigned UID/GID ranges.
+- Ensure the EKS mover pod can resolve and reach the target OCP passthrough Route.
+- Do not assume OCP 5 retains the OCP 4 Route, SCC, namespace UID/GID, or CSI contracts; run the target-major gates first.
 
 ## Test Backlog
 
 | Priority | Test | Expected result |
 | --- | --- | --- |
-| P0 | OCP Route to EKS exposure | Functional, explicitly selected controller |
-| P0 | OCP RWO PVC to EBS CSI | Transfer, checksum, topology, and cutover |
-| P0 | EKS EBS PVC to OCP RWO CSI | Reverse direction over its independent network path |
-| P0 | NGINX endpoint on public EKS | stunnel connectivity from an OCP pod |
-| P0 | Private EKS through S3-compatible storage | Functional fallback |
-| P1 | OCP RWX storage and EFS CSI | Permissions, symlinks, and performance |
+| P0 | EKS Ingress to OCP Route | Functional exposure with recorded transformation |
+| P0 | EKS EBS PVC to OCP RWO CSI | Transfer, checksum, topology, and cutover |
+| P0 | Public EKS source to OCP Route | stunnel connectivity from an EKS mover pod |
+| P0 | Private EKS through S3-compatible storage | Functional fallback when OCP Route is unreachable |
+| P0 | EKS to OCP 5 target-major gate | API discovery, security, Route, CSI, and Crane client compatibility |
+| P1 | EFS CSI to OCP RWX storage | Permissions, symlinks, and performance |
 | P1 | AWS load balancer annotations to OCP | Safe removal or mapping |
 | P1 | IRSA or Pod Identity workload | Actionable prerequisite or blocker |
 | P1 | Non-root StatefulSet | PSA/SCC and file ownership |
@@ -64,7 +59,7 @@ In addition to the general process, determine:
 
 Before adding EKS-specific code, determine:
 
-- whether the issue is a general OCP-to-upstream difference,
+- whether the issue is a general upstream-to-OCP difference,
 - whether capability discovery (`IngressClass`, CSI, served APIs) can solve it,
 - whether StorageClass mapping incorrectly uses Azure names as logic,
 - whether indirect transport uses a general S3-compatible contract,
@@ -72,9 +67,10 @@ Before adding EKS-specific code, determine:
 
 ## Definition of Done
 
-- P0 scenarios pass in both directions on recorded versions.
+- P0 EKS-to-OCP scenarios pass separately on every claimed OCP 4 or OCP 5 target profile.
 - Public and private profiles have validated data transfer paths.
-- The AWS Load Balancer Controller versus NGINX endpoint difference is detected before transfer.
+- AWS Load Balancer Controller and NGINX workload exposure differences are detected before manifest transformation.
 - EBS/EFS mapping is capability-based.
 - AWS identities and CRDs are not silently transferred as apparently functional resources.
 - Results use the same [validation report template](VALIDATION_REPORT_TEMPLATE.md) as AKS.
+- OCP 5 remains `Unknown` or `Experimental` until [target-major enablement gates](OCP_TARGET_VERSIONS.md) pass.

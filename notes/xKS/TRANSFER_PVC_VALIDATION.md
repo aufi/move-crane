@@ -1,4 +1,4 @@
-# Validating transfer-pvc Across Platforms
+# Validating transfer-pvc from xKS to OCP 4 or 5
 
 ## Current Flow
 
@@ -6,22 +6,23 @@ For a direct transfer, Crane:
 
 1. Reads the source PVC.
 2. Creates or validates the target PVC.
-3. Creates a `route` or `nginx-ingress` endpoint on the target.
+3. Creates a `route` endpoint on target OCP when the target serves the required API and router behavior.
 4. Creates the target stunnel/rsync server.
 5. Copies the mTLS Secret to the source.
 6. Starts the source client and copies data.
 7. Removes temporary resources.
 
-The source pod therefore initiates the connection to the target cluster endpoint. The reverse migration direction must be tested separately.
+For these plans, the source pod runs on xKS and initiates the connection to a Route endpoint on target OCP 4 or OCP 5. The reverse direction is out of scope.
 
-Current Crane also provides indirect transfer through S3-compatible object storage. This is the fallback for private clusters, incompatible ingress, or clusters without mutual connectivity.
+Current Crane also provides indirect transfer through S3-compatible object storage. This is the fallback when the managed source cannot reach the OCP Route or when cluster connectivity is otherwise unavailable.
 
 ## Direct Transfer Network Prerequisites
 
 Validate on the target:
 
-- an installed and functional ingress controller or OCP router,
-- a compatible `IngressClass`,
+- the exact OCP major, minor, patch, and embedded Kubernetes version,
+- availability of `route.openshift.io/v1` and any OpenShift config API used for hostname discovery,
+- an installed and functional OCP router,
 - TCP/TLS passthrough support for stunnel, not only HTTP termination,
 - creation of a publicly or privately reachable hostname,
 - correct DNS and certificate passthrough behavior,
@@ -36,16 +37,20 @@ Validate on the source:
 
 Crane preflight should validate these conditions before creating the target PVC, or at least before starting a long-running transfer.
 
-## Endpoint Matrix
+## Endpoint Contract
 
-| Target | Preferred endpoint | Notes |
-| --- | --- | --- |
-| OCP 4 | `route` | Validate passthrough Route and router domain |
-| AKS | `nginx-ingress` | A compatible controller is not guaranteed; requires a specific ingress class and subdomain |
-| EKS | `nginx-ingress` | AWS Load Balancer Controller alone may not satisfy NGINX annotations or passthrough behavior |
-| kind/minikube | `nginx-ingress` | Control baseline; ingress must be reachable from the other cluster |
+| Source | Target | Endpoint | Required path |
+| --- | --- | --- | --- |
+| AKS | OCP 4 | `route` | AKS mover pod to OCP passthrough Route |
+| AKS | OCP 5 | `route`, if validated | AKS mover pod to the validated OCP 5 endpoint |
+| EKS | OCP 4 | `route` | EKS mover pod to OCP passthrough Route |
+| EKS | OCP 5 | `route`, if validated | EKS mover pod to the validated OCP 5 endpoint |
+| Other xKS | OCP 4 or 5 | `route`, if validated | Source mover pod to the target OCP endpoint |
+| kind/minikube | OCP 4 or 5 | `route`, if validated | Optional source-side control test |
 
-When a platform uses another ingress implementation, validate behavior rather than only checking for an `IngressClass`.
+The source cluster does not need to expose an ingress endpoint for `transfer-pvc`. Its ingress implementation matters only when converting workload manifests.
+
+If an OCP 5 target does not provide the Route and router contract expected by the current Crane implementation, direct transfer is unsupported for that profile. Crane must report this before copying data and use indirect object-storage transfer when configured.
 
 ## StorageClass Mapping
 
@@ -67,11 +72,11 @@ Example mapping profile:
 
 ```yaml
 source:
-  name: ocs-storagecluster-ceph-rbd
+  name: managed-csi-premium
   accessModes: [ReadWriteOnce]
   volumeMode: Filesystem
 target:
-  name: managed-csi-premium
+  name: ocs-storagecluster-ceph-rbd
 requiredCapabilities:
   accessModes: [ReadWriteOnce]
   volumeMode: Filesystem
@@ -110,7 +115,7 @@ Exact class names depend on cluster configuration and must not be hardcoded as u
 
 ### T5: Cleanup
 
-- After success and failure, inspect temporary Pods, Services, Ingresses/Routes, Secrets, and ConfigMaps.
+- After success and failure, inspect temporary Pods, Services, Routes, Secrets, and ConfigMaps.
 - Preserve the target PVC and transferred data.
 
 ### T6: Indirect Transfer
@@ -130,7 +135,8 @@ Exact class names depend on cluster configuration and must not be hardcoded as u
 ## Security Validation
 
 - Mover pods run without privilege escalation and with minimum capabilities.
-- OCP SCC and Kubernetes Pod Security Admission accept them.
+- Source Pod Security Admission and target OCP SCC accept their respective mover pods.
+- OCP 4 and OCP 5 security behavior is validated separately, including namespace UID/GID allocation.
 - Temporary certificates are not logged and are removed after transfer.
 - RBAC permits only required resources in migration namespaces.
 - The mover image is reachable and trusted on both platforms.
@@ -138,9 +144,10 @@ Exact class names depend on cluster configuration and must not be hardcoded as u
 
 ## Acceptance Criteria
 
-A direct direction is supported when:
+Direct xKS-to-OCP transfer is supported when:
 
-- preflight identifies missing ingress, passthrough, and storage prerequisites,
+- the exact OCP target profile is recorded and its Route, security, and CSI contracts are validated,
+- preflight identifies missing OCP Route passthrough and storage prerequisites,
 - 10 GiB of reference data transfers without corruption,
 - checksum validation succeeds,
 - the workload passes a functional smoke test after cutover,

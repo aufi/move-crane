@@ -2,7 +2,7 @@
 
 ## Goal
 
-This process determines whether Crane can migrate workloads between OCP 4 and a specific Kubernetes service profile. The result is not a blanket compatibility label for a provider, but a versioned profile with evidence and documented limitations.
+This process determines whether Crane can migrate workloads from a specific managed Kubernetes service profile into an exact OCP 4 or OCP 5 target profile. The result is not a blanket compatibility label for a provider or OCP major, but a versioned source-to-target profile with evidence and documented limitations.
 
 All discovery runs from the Crane CLI and writes results to disk. It must not deploy an operator, install a CRD, or create a Crane-specific custom resource in either cluster. Queries for existing CRDs, controllers, and webhooks are read-only compatibility checks.
 
@@ -12,6 +12,7 @@ Record the following before testing:
 
 - provider, region, and service type,
 - Kubernetes version and available upgrade targets,
+- exact target OCP major, minor, patch, and embedded Kubernetes version,
 - public or private API server,
 - network plugin, network policy, and egress model,
 - ingress controller, `IngressClass`, and external DNS/TLS layer,
@@ -21,11 +22,11 @@ Record the following before testing:
 - installed operators, add-ons, and their CRDs,
 - Crane and plugin commits or releases.
 
-The same platform with a different ingress controller or CSI driver is a different validation profile.
+The same source with a different ingress controller or CSI driver is a different validation profile. The same source tested against OCP 4 and OCP 5 also represents two separate profiles.
 
 ## 2. API Discovery
 
-Store a machine-readable snapshot from both clusters:
+Store a machine-readable snapshot from the managed source and OCP target:
 
 ```bash
 kubectl --context "$SOURCE" version -o yaml
@@ -41,6 +42,8 @@ kubectl --context "$TARGET" get ingressclass -o yaml > target-ingress.yaml
 ```
 
 If the user cannot read cluster-scoped objects, record the capability as `unknown`; do not assume compatibility.
+
+For an OCP 5 target, also apply the evidence and enablement gates in [OCP_TARGET_VERSIONS.md](OCP_TARGET_VERSIONS.md).
 
 ## 3. Application Inventory
 
@@ -78,7 +81,7 @@ Use at least these workloads:
 | Scenario | Concern under test |
 | --- | --- |
 | Deployment and ClusterIP Service | Basic portability |
-| Externally exposed HTTP application | Route/Ingress and ingress class |
+| Externally exposed HTTP application | Source Ingress to the exact target's supported OCP exposure API |
 | StatefulSet and RWO PVC | Dynamic provisioning and data |
 | Application with RWX PVC | Shared filesystem and access modes |
 | CronJob | API versions and batch workloads |
@@ -104,14 +107,14 @@ Follow [TRANSFER_PVC_VALIDATION.md](TRANSFER_PVC_VALIDATION.md). Required cases 
 
 Test `volumeMode: Block` separately. File-level rsync/rclone must not be presented as block-volume support.
 
-## 7. Bidirectionality and Network Roles
+## 7. Fixed Transfer Direction and Network Roles
 
-For direct transfers, Crane creates a public endpoint on the target cluster and runs the client mover on the source. OCP to AKS therefore does not test the same network path as AKS to OCP.
+For direct transfers, Crane currently creates a Route endpoint on target OCP and runs the client mover on the managed source cluster. Only this xKS-to-OCP path is in scope. Route API and router behavior must be verified independently on OCP 4 and OCP 5.
 
-Validate in each direction:
+Validate:
 
-- target ingress/route support for the TCP/TLS passthrough required by stunnel,
-- DNS resolution and egress from source nodes and pods,
+- target OCP router support for the TCP/TLS passthrough required by stunnel,
+- resolution of the OCP Route hostname and egress from managed-source nodes and pods,
 - firewalls, security groups or NSGs, proxies, and network policies,
 - endpoint access from a pod, not only from the user's workstation,
 - rotation and cleanup of temporary certificate Secrets.
@@ -140,8 +143,10 @@ Preferred solution order:
 | --- | --- |
 | Supported | Required matrix passes, limitations are documented, and regressions are tested |
 | Supported with prerequisites | Passes only with clearly verifiable ingress, CSI, or add-on prerequisites |
-| Experimental | Main flow works, but bidirectionality, retry, upgrade, or a major scenario is missing |
+| Experimental | Main flow works, but retry, upgrade coverage, or a major scenario is missing |
 | Unsupported | Known blocker without a safe procedure |
 | Unknown | Test not run or evidence unavailable |
+
+An untested OCP 5 profile is `Unknown`, even if the same source passed against OCP 4. A partially validated OCP 5 profile remains `Experimental` until the gates in [OCP_TARGET_VERSIONS.md](OCP_TARGET_VERSIONS.md) are met.
 
 Record the result using [VALIDATION_REPORT_TEMPLATE.md](VALIDATION_REPORT_TEMPLATE.md).
