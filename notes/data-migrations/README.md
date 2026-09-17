@@ -35,6 +35,7 @@ This directory contains comprehensive analysis and recommendations for improving
 | **[PVC_LOCAL_EXPORT_IMPORT_IMPLEMENTATION_PLAN.md](PVC_LOCAL_EXPORT_IMPORT_IMPLEMENTATION_PLAN.md)** | 📅 **3-day implementation plan** | Detailed hourly breakdown<br>Code examples & tests<br>Bonus: S3 upload guide |
 | **[PVC_EXPLORE_PROPOSAL.md](PVC_EXPLORE_PROPOSAL.md)** | 🔍 **PVC discovery & command generator** | Auto-discover PVCs from export/<br>Generate copy-paste commands<br>**Simple instructions file** - just PVC transfers, no orchestration |
 | **[PVC_EXPORT_IMPORT_SUMMARY.md](PVC_EXPORT_IMPORT_SUMMARY.md)** | 📋 **80-line executive summary** | Quick overview of rclone-based proposal |
+| **[TRANSFER_PVC_DISCONNECTED_IMAGE.md](TRANSFER_PVC_DISCONNECTED_IMAGE.md)** | Disconnected rsync-transfer image runbook | Integrated OpenShift registry<br>Air-gap export/import<br>Cross-project pull access |
 
 ---
 
