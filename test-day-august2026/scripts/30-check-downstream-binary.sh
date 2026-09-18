@@ -10,9 +10,9 @@
 #        export, transform, apply, validate, transfer-pvc
 #      and the upstream-only extras are ABSENT:
 #        plugin-manager, convert, skopeo-sync-gen, tunnel-api
-#   B) Embedded transform plugins — Kubernetes, OpenShift and Builds/Shipwright are
-#      all built in (no external --plugin-dir; in particular Shipwright must NOT be
-#      added externally). Enumerated from a `transform` run in a clean CWD.
+#   B) Embedded transform plugins — Kubernetes, OpenShift and BuildConfigToBuilds
+#      are all built in (no external --plugin-dir). Enumerated with
+#      `transform list-plugins`.
 #   C) Transfer image — the transfer-pvc default container image is a downstream
 #      image NOT hosted on quay.io. Its name is echoed to the log.
 #
@@ -34,9 +34,8 @@ CRANE_BIN="${CRANE_BIN:-crane}"
 # Downstream contract.
 REQUIRED_CMDS=(export transform apply validate transfer-pvc)
 FORBIDDEN_CMDS=(plugin-manager convert skopeo-sync-gen tunnel-api)
-# Embedded plugin categories: label -> case-insensitive regex over plugin names.
-PLUGIN_LABELS=(Kubernetes OpenShift "Builds/Shipwright")
-PLUGIN_REGEX=("kubernetes" "openshift" "shipwright|build")
+# Exact plugin names expected in the downstream binary.
+REQUIRED_PLUGINS=(KubernetesPlugin OpenShiftPlugin BuildConfigToBuildsPlugin)
 
 fail=0
 note() { echo "  $*"; }
@@ -73,42 +72,18 @@ for c in "${FORBIDDEN_CMDS[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# B) Embedded transform plugins (no external plugin dir)
+# B) Embedded transform plugins
 # ---------------------------------------------------------------------------
 echo
-echo "== B) embedded transform plugins (no external --plugin-dir) =="
-# `transform` picks up ./plugins relative to the CWD, so run it from a clean temp
-# dir with an empty plugin-dir to see ONLY what is embedded in the binary.
-WORK="$(mktemp -d)"
-trap 'rm -rf "${WORK}"' EXIT
-mkdir -p "${WORK}/export/resources/demo-ns" "${WORK}/noplugins"
-cat > "${WORK}/export/resources/demo-ns/ConfigMap_v1_demo-ns_demo.yaml" <<'YAML'
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: demo
-  namespace: demo-ns
-data:
-  foo: bar
-YAML
-
-TRANSFORM_OUT="$(cd "${WORK}" && "${CRANE_BIN}" transform \
-  --export-dir "${WORK}/export" \
-  --transform-dir "${WORK}/transform" \
-  --plugin-dir "${WORK}/noplugins" \
-  --overwrite 2>&1)"
-
-# Default stages are created for every discovered plugin; parse their names.
-EMBEDDED="$(printf '%s\n' "${TRANSFORM_OUT}" \
-  | grep -oE 'Creating default stage for plugin: [A-Za-z0-9_.-]+' \
-  | sed 's/.*: //' | sort -u)"
+echo "== B) embedded transform plugins =="
+EMBEDDED="$("${CRANE_BIN}" transform list-plugins 2>&1 \
+  | sed -n 's/^Plugin: \([^ ]*\).*/\1/p' | sort -u)"
 echo "embedded plugins: $(echo ${EMBEDDED} | tr '\n' ' ')"
-for i in "${!PLUGIN_LABELS[@]}"; do
-  label="${PLUGIN_LABELS[$i]}"; rx="${PLUGIN_REGEX[$i]}"
-  if grep -qiE "${rx}" <<<"${EMBEDDED}"; then
-    note "OK    embedded: ${label} ($(grep -iE "${rx}" <<<"${EMBEDDED}" | tr '\n' ' '))"
+for plugin in "${REQUIRED_PLUGINS[@]}"; do
+  if grep -qxF "${plugin}" <<<"${EMBEDDED}"; then
+    note "OK    embedded: ${plugin}"
   else
-    note "FAIL  not embedded: ${label}"; fail=1
+    note "FAIL  not embedded: ${plugin}"; fail=1
   fi
 done
 

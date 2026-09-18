@@ -15,7 +15,7 @@
 #
 # Config via env:
 #   NAMESPACE          namespace on both clusters (default: wordpress)
-#   DEST_STORAGE_CLASS destination storage class (default: gp3-csi)
+#   DEST_STORAGE_CLASS destination storage class (default: crc-csi-hostpath-provisioner)
 #   DEST_STORAGE_REQ   destination PVC size     (default: 1Gi)
 #   RUNS               how many times to run the transfer (default: 1). With
 #                      RUNS=2 the transfer is repeated after the first pass and
@@ -25,15 +25,19 @@
 #                      be faster. See findings/08.
 #   CRANE_BIN          migration binary to test (default: crane). Set to the
 #                      downstream build (e.g. mta-ops) to run the same flow.
+#   SOURCE_IMAGE       override transfer image on the source cluster
+#   DESTINATION_IMAGE  override transfer image on the destination cluster
 
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAMESPACE="${NAMESPACE:-wordpress}"
-DEST_STORAGE_CLASS="${DEST_STORAGE_CLASS:-gp3-csi}"
+DEST_STORAGE_CLASS="${DEST_STORAGE_CLASS:-crc-csi-hostpath-provisioner}"
 DEST_STORAGE_REQ="${DEST_STORAGE_REQ:-1Gi}"
 RUNS="${RUNS:-1}"
 CRANE_BIN="${CRANE_BIN:-crane}"
+SOURCE_IMAGE="${SOURCE_IMAGE:-}"
+DESTINATION_IMAGE="${DESTINATION_IMAGE:-}"
 export KUBECONFIG="${REPO_DIR}/kubeconfig-merged"
 
 PVCS=(mysql-pv-claim wordpress-pv-claim)
@@ -62,6 +66,9 @@ oc --context src -n "${NAMESPACE}" get pods 2>&1
 
 transfer_all_pvcs() {  # $1 = run number (for logging)
   local run_no="$1"
+  local image_flags=()
+  [[ -n "${SOURCE_IMAGE}" ]] && image_flags+=(--source-image "${SOURCE_IMAGE}")
+  [[ -n "${DESTINATION_IMAGE}" ]] && image_flags+=(--destination-image "${DESTINATION_IMAGE}")
   for pvc in "${PVCS[@]}"; do
     echo
     echo "--- transfer-pvc: ${pvc} (run ${run_no}/${RUNS}) ---"
@@ -74,6 +81,7 @@ transfer_all_pvcs() {  # $1 = run number (for logging)
       --endpoint route \
       --dest-storage-class "${DEST_STORAGE_CLASS}" \
       --dest-storage-requests "${DEST_STORAGE_REQ}" \
+      "${image_flags[@]}" \
       --verify
     { set +x; } 2>/dev/null
   done

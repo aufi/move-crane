@@ -29,7 +29,7 @@ Notes on the parametrized scripts:
   string, which is just printed).
 - `22-crane-buildconfig-convert.sh` — gained `SKIP_PLUGIN_BUILD=true`, which drops
   the external plugin build **and** `--plugin-dir`, so the BuildConfig→Shipwright
-  conversion runs on the binary's *embedded* Builds/Shipwright plugin. Upstream
+  conversion runs on the binary's *embedded* `BuildConfigToBuildsPlugin`. Upstream
   crane has no embedded BuildConfig plugin, so its default (`false`) still builds
   and adds the external one.
 
@@ -41,18 +41,14 @@ downstream-specific contract, read-only, no cluster:
 | # | Check | Downstream expectation |
 | :-- | :-- | :-- |
 | A | Command surface | ONLY `export, transform, apply, validate, transfer-pvc`; `plugin-manager, convert, skopeo-sync-gen, tunnel-api` **absent** |
-| B | Embedded transform plugins | `Kubernetes`, `OpenShift` **and** `Builds/Shipwright` all built in (no external plugin dir; Shipwright must **not** be added externally) |
+| B | Embedded transform plugins | `KubernetesPlugin`, `OpenShiftPlugin` **and** `BuildConfigToBuildsPlugin` are all built in (no external plugin dir) |
 | C | Transfer image | `transfer-pvc` default container image is a downstream image **not** on `quay.io`; its name is echoed to the log |
 
 How each check works:
 
 - **A** parses the `Available Commands:` block of `<bin> --help`.
-- **B** runs `<bin> transform` on a throwaway one-ConfigMap export from a **clean
-  temp CWD** with an empty `--plugin-dir`. `transform` otherwise auto-loads
-  `./plugins` relative to the CWD, so a clean CWD is what isolates *embedded*
-  plugins. It then reads the `Creating default stage for plugin: <Name>` log lines
-  (crane creates one default stage per discovered plugin) and matches names
-  case-insensitively against `kubernetes` / `openshift` / `shipwright|build`.
+- **B** parses `<bin> transform list-plugins`, which lists the plugins compiled
+  into the binary, and requires the exact expected plugin names.
 - **C** parses the `--source-image` (fallback `--destination-image`) default out of
   `<bin> transfer-pvc --help` and asserts it does not contain `quay.io`.
 
@@ -66,7 +62,7 @@ diff mta-ops has to close:
 
 ```
 A) commands: extra present -> plugin-manager, convert, skopeo-sync-gen, tunnel-api
-B) embedded plugins: KubernetesPlugin only  (OpenShift, Builds/Shipwright NOT embedded)
+B) embedded plugins: KubernetesPlugin only  (OpenShift, BuildConfigToBuilds NOT embedded)
 C) transfer image: quay.io/konveyor/rsync-transfer:latest  (on quay.io)
 RESULT: FAIL (expected when checking upstream 'crane')
 ```

@@ -16,17 +16,22 @@
 #   KUBECONFIG  defaults to repo kubeconfig-src
 #   CRANE_BIN   migration binary to test (default: crane). Set to the downstream
 #               build (e.g. mta-ops) to run the exact same flow against it.
+#   WORK_SUFFIX suffix for generated export/transform/output directories (default: empty)
+#   PVC_STORAGE_CLASS_MAP  KubernetesPlugin storage class map, e.g.
+#                          standard:crc-csi-hostpath-provisioner
 
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAMESPACE="${NAMESPACE:-wordpress}"
 CRANE_BIN="${CRANE_BIN:-crane}"
+WORK_SUFFIX="${WORK_SUFFIX:-}"
+PVC_STORAGE_CLASS_MAP="${PVC_STORAGE_CLASS_MAP:-}"
 export KUBECONFIG="${KUBECONFIG:-${REPO_DIR}/kubeconfig-src}"
 
-EXPORT_DIR="${REPO_DIR}/export"
-TRANSFORM_DIR="${REPO_DIR}/transform"
-OUTPUT_DIR="${REPO_DIR}/output"
+EXPORT_DIR="${REPO_DIR}/export${WORK_SUFFIX}"
+TRANSFORM_DIR="${REPO_DIR}/transform${WORK_SUFFIX}"
+OUTPUT_DIR="${REPO_DIR}/output${WORK_SUFFIX}"
 
 echo "== context =="
 echo "kubeconfig: ${KUBECONFIG}"
@@ -47,10 +52,15 @@ ls -1 "${EXPORT_DIR}/resources/${NAMESPACE}" 2>/dev/null || ls -1R "${EXPORT_DIR
 
 echo
 echo "== 2) crane transform =="
+stage_optionals=()
+if [[ -n "${PVC_STORAGE_CLASS_MAP}" ]]; then
+  stage_optionals+=(--stage-optionals "KubernetesPlugin={\"pvc-storage-class-map\":\"${PVC_STORAGE_CLASS_MAP}\"}")
+fi
 set -x
 "${CRANE_BIN}" transform \
   --export-dir "${EXPORT_DIR}" \
   --transform-dir "${TRANSFORM_DIR}" \
+  "${stage_optionals[@]}" \
   --overwrite
 { set +x; } 2>/dev/null
 echo "transform stages:"

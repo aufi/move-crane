@@ -37,6 +37,85 @@ tool. Crane sources are available locally via the `./crane-sources` symlink.
 Sessions are stored in separate kubeconfigs by `scripts/02-login-clusters.sh`:
 `kubeconfig-src` and `kubeconfig-tgt`.
 
+For non-OpenShift source or target clusters, see
+[`REGISTRY_REDHAT_IO_EXTERNAL_CLUSTER_SETUP.md`](REGISTRY_REDHAT_IO_EXTERNAL_CLUSTER_SETUP.md)
+to grant migration pods access to the downstream transfer image.
+
+### Local Minikube -> CRC setup
+
+The local test topology uses Minikube as the source and CRC OpenShift as the
+target. After both clusters are running and their contexts are present in the
+default kubectl configuration, generate the isolated test-day kubeconfigs with:
+
+```bash
+scripts/00-prepare-local-clusters.sh
+```
+
+It uses contexts `minikube` and `crc-admin` by default, writes the ignored
+`kubeconfig-src` and `kubeconfig-tgt` files, and creates `kubeconfig-merged`
+with contexts `src` and `tgt` for `transfer-pvc`. Override either context with
+`SRC_CONTEXT` or `TGT_CONTEXT`.
+
+CRC's default storage class is `crc-csi-hostpath-provisioner`; this is the
+default in the PVC-transfer scripts. Do not use the direct transfer script
+(`07-transfer-pvc.sh`) with this local topology: CRC maps
+`*.apps-crc.testing` to the host's `127.0.0.1`, which is not reachable from the
+Minikube VM. Use indirect S3-compatible transfer instead:
+
+```bash
+TRANSFER_SCRIPT=11-transfer-pvc-indirect.sh CLOUD_BUCKET=<bucket> \
+  CRANE_BIN=mta-ops scripts/10-run-full-migration.sh
+```
+
+The local, ignored `rclone.conf` must contain the `remote` profile. Set
+`DEST_STORAGE_CLASS` when targeting another cluster.
+
+The MTA transfer image is entitled content from `registry.redhat.io`. If the
+source cluster cannot pull it, use `SOURCE_IMAGE` and `DESTINATION_IMAGE` to
+override the transfer runtime for an E2E test while retaining script 30's check
+of the downstream default image.
+
+When transformed PVC manifests are retained, map their source storage class to
+the class used by `transfer-pvc`, for example:
+
+```bash
+PVC_STORAGE_CLASS_MAP=standard:crc-csi-hostpath-provisioner \
+  CRANE_BIN=mta-ops scripts/05-crane-export-transform-apply.sh
+```
+
+Minikube does not provide the OpenShift `BuildConfig` API. To verify the embedded
+`BuildConfigToBuildsPlugin`, create an export fixture from the stored manifest
+instead, then transform it with the downstream binary:
+
+```bash
+CRANE_BIN=mta-ops SKIP_PLUGIN_BUILD=true LOCAL_INPUT=true \
+  WORK_SUFFIX=-bc-mta-local scripts/22-crane-buildconfig-convert.sh
+```
+
+This produces `output-bc-mta-local/output.yaml`. To verify that the converted
+Shipwright Build can build and push on CRC, ensure the operators and strategies
+are installed, then run the BuildRun scenario:
+
+```bash
+scripts/20-install-openshift-builds-operator.sh
+WORK_SUFFIX=-bc-mta-local scripts/23-apply-shipwright-target.sh
+```
+
+To use CRC as both the OpenShift BuildConfig source and Shipwright target, pass
+the target kubeconfig as `KUBECONFIG_SRC` to steps 21 and 22:
+
+```bash
+NAMESPACE=bc-mta-crc KUBECONFIG_SRC=kubeconfig-tgt scripts/21-deploy-buildconfig-src.sh
+NAMESPACE=bc-mta-crc KUBECONFIG_SRC=kubeconfig-tgt CRANE_BIN=mta-ops \
+  SKIP_PLUGIN_BUILD=true WORK_SUFFIX=-bc-mta-crc scripts/22-crane-buildconfig-convert.sh
+NAMESPACE=bc-mta-crc WORK_SUFFIX=-bc-mta-crc scripts/23-apply-shipwright-target.sh
+```
+
+Step 21 disables source BuildConfig triggers by default. This prevents the
+legacy OpenShift build from racing the Shipwright BuildRun and overwriting its
+target ImageStreamTag. Set `DISABLE_TRIGGERS=false` only when trigger conversion
+warnings are explicitly under test.
+
 ## Test application
 
 Stateful WordPress (MySQL + WordPress/NGINX, two PVCs, Secret, ConfigMap, install
@@ -65,6 +144,7 @@ plugins/      built crane plugin binary          (generated)
 
 | # | Script | Purpose |
 | :-- | :-- | :-- |
+| 00 | `scripts/00-prepare-local-clusters.sh` | Create test kubeconfigs from local Minikube and CRC contexts |
 | 01 | `scripts/01-check-versions.sh` | Verify crane build and companion tools |
 | 02 | `scripts/02-login-clusters.sh` | Log in to both clusters (separate kubeconfigs) |
 | 03 | `scripts/03-deploy-app-src.sh` | Deploy WordPress to the source cluster |
@@ -79,10 +159,10 @@ plugins/      built crane plugin binary          (generated)
 | — | *BuildConfig → Shipwright (objective 2)* | |
 | 20 | `scripts/20-install-openshift-builds-operator.sh` | Install OpenShift Pipelines + Builds operators (Shipwright) + ClusterBuildStrategies on the target |
 | 21 | `scripts/21-deploy-buildconfig-src.sh` | Deploy the sample S2I BuildConfig to the source |
-| 22 | `scripts/22-crane-buildconfig-convert.sh` | `crane export --include-gk` → `transform BuildConfigPlugin` → `apply` |
+| 22 | `scripts/22-crane-buildconfig-convert.sh` | `crane export --include-gk` → `transform BuildConfigToBuildsPlugin` → `apply` |
 | 23 | `scripts/23-apply-shipwright-target.sh` | Apply the converted Build to the target, run a BuildRun, verify the pushed image |
 | — | *Downstream binary (mta-ops)* | |
-| 30 | `scripts/30-check-downstream-binary.sh` | Assert the downstream binary contract: command surface, embedded plugins (Kubernetes/OpenShift/Builds-Shipwright), non-quay.io transfer image (`CRANE_BIN=<bin>`) |
+| 30 | `scripts/30-check-downstream-binary.sh` | Assert the downstream binary contract: command surface, embedded plugins (Kubernetes/OpenShift/BuildConfigToBuilds), non-quay.io transfer image (`CRANE_BIN=<bin>`) |
 
 ## Findings
 
@@ -97,6 +177,8 @@ plugins/      built crane plugin binary          (generated)
 | 07 | [`findings/07-buildconfig-to-shipwright-conversion.md`](findings/07-buildconfig-to-shipwright-conversion.md) — BuildConfig → Shipwright end to end: crane v0.11 alpha drives the plugin, `--include-gk` scoping, BuildRun builds + pushes (S2I **and** Docker/buildah), `oc get build` naming clash |
 | 08 | [`findings/08-transfer-pvc-incremental-timing.md`](findings/08-transfer-pvc-incremental-timing.md) — `transfer-pvc` re-run is incremental: second run is faster (direct + indirect); `--keep-cloud-data` makes the indirect upload incremental too (~2×) |
 | 09 | [`findings/09-downstream-binary-check.md`](findings/09-downstream-binary-check.md) — run the same flow against a downstream binary via `CRANE_BIN`; separate contract check (commands, embedded plugins, non-quay.io transfer image) — validated against crane as the documented upstream/downstream diff |
+| 10 | [`findings/10-mta-ops-minikube-crc.md`](findings/10-mta-ops-minikube-crc.md) — mta-ops 8.3.0 Minikube → CRC WordPress migration: E2E result, incremental transfer timing, local topology constraints, PVC output behavior |
+| 11 | [`findings/11-mta-ops-buildconfig-to-builds-crc.md`](findings/11-mta-ops-buildconfig-to-builds-crc.md) — mta-ops 8.3.0 BuildConfigToBuilds conversion and BuildRun on one CRC cluster |
 
 ## Result
 
@@ -175,8 +257,8 @@ A **separate** check, `scripts/30-check-downstream-binary.sh`, asserts the
 downstream-specific contract (it does not migrate data): only
 `export/transform/apply/validate/transfer-pvc` commands (no
 `plugin-manager/convert/skopeo-sync-gen/tunnel-api`); embedded transform plugins
-`Kubernetes` + `OpenShift` + `Builds/Shipwright` (Shipwright embedded, not added
-externally); and a `transfer-pvc` default image **not** on `quay.io` (echoed to the
+`Kubernetes` + `OpenShift` + `BuildConfigToBuilds` (the conversion plugin is
+embedded, not added externally); and a `transfer-pvc` default image **not** on `quay.io` (echoed to the
 log). Run against crane it reports `RESULT: FAIL`, spelling out the exact
 upstream/downstream diff mta-ops must close — see finding 09.
 

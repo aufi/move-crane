@@ -7,7 +7,7 @@
 #
 #   export  : crane export -n <ns> --include-gk build.openshift.io/BuildConfig
 #             (only the relevant resource is pulled, not the whole namespace)
-#   transform: crane transform BuildConfigPlugin  (plugin invoked by name)
+#   transform: crane transform BuildConfigToBuildsPlugin  (plugin invoked by name)
 #   apply   : crane apply -> output-bc/output.yaml
 #
 # The plugin has no live cluster access, so ImageStream references are resolved
@@ -29,14 +29,20 @@
 #   WORK_SUFFIX     suffix for the generated dirs (default: -bc). Use a distinct
 #                   suffix (e.g. -bc-docker) to keep multiple cases side by side.
 #   PLUGIN_SRC      plugin source checkout    (default: ./crane-plugin-buildconfig-to-shipwright-sources)
+#   PLUGIN_NAME     transform plugin name (default: BuildConfigToBuildsPlugin)
 #   CRANE_BIN       migration binary to test  (default: crane). Set to the
 #                   downstream build (e.g. mta-ops) to run the same conversion.
 #   SKIP_PLUGIN_BUILD  "true" skips building/adding the external BuildConfig
 #                   plugin and drops --plugin-dir, so the conversion relies on the
-#                   binary's EMBEDDED Builds/Shipwright plugin. Use this for the
-#                   downstream build (mta-ops), where Shipwright is embedded and
+#                   binary's EMBEDDED BuildConfigToBuilds plugin. Use this for the
+#                   downstream build (mta-ops), where the plugin is embedded and
 #                   must not be added externally. Default: false (upstream crane
 #                   has no embedded BuildConfig plugin, so it is built + added).
+#   LOCAL_INPUT      "true" creates the export input from BC_FILE instead of reading
+#                    a source cluster. Use with a Kubernetes-only source such as
+#                    Minikube. Default: false.
+#   BC_FILE          BuildConfig fixture for LOCAL_INPUT=true (default: sample nodejs)
+#   KUBECONFIG_SRC   source cluster kubeconfig (default: repo kubeconfig-src)
 
 set -euo pipefail
 
@@ -47,11 +53,14 @@ PLUGIN_SRC="${PLUGIN_SRC:-${REPO_DIR}/crane-plugin-buildconfig-to-shipwright-sou
 PLUGIN_DIR="${REPO_DIR}/plugins"
 CRANE_BIN="${CRANE_BIN:-crane}"
 SKIP_PLUGIN_BUILD="${SKIP_PLUGIN_BUILD:-false}"
+PLUGIN_NAME="${PLUGIN_NAME:-BuildConfigToBuildsPlugin}"
+LOCAL_INPUT="${LOCAL_INPUT:-false}"
+BC_FILE="${BC_FILE:-${REPO_DIR}/test-app/buildconfig/sample-nodejs-buildconfig.yaml}"
 WORK_SUFFIX="${WORK_SUFFIX:--bc}"
 EXPORT_DIR="${REPO_DIR}/export${WORK_SUFFIX}"
 TRANSFORM_DIR="${REPO_DIR}/transform${WORK_SUFFIX}"
 OUTPUT_DIR="${REPO_DIR}/output${WORK_SUFFIX}"
-KC_SRC="${REPO_DIR}/kubeconfig-src"
+KC_SRC="${KUBECONFIG_SRC:-${REPO_DIR}/kubeconfig-src}"
 
 # Default optional-flags: resolve the S2I builder ImageStreamTag to a concrete
 # image. Override via the OPTIONAL_FLAGS env for other cases (e.g. Docker/buildah).
@@ -63,7 +72,7 @@ if [[ -z "${OPTIONAL_FLAGS:-}" ]]; then
 fi
 
 if [[ "${SKIP_PLUGIN_BUILD}" == "true" ]]; then
-  echo "== 1) skip external plugin build (relying on ${CRANE_BIN}'s embedded Builds/Shipwright plugin) =="
+  echo "== 1) skip external plugin build (relying on ${CRANE_BIN}'s embedded ${PLUGIN_NAME} plugin) =="
 else
   echo "== 1) build the plugin =="
   mkdir -p "${PLUGIN_DIR}"
@@ -72,25 +81,32 @@ else
 fi
 
 echo
-echo "== 2) crane export (only build.openshift.io/BuildConfig via --include-gk) =="
-set -x
-"${CRANE_BIN}" export \
-  --kubeconfig "${KC_SRC}" \
-  -n "${NAMESPACE}" \
-  --include-gk build.openshift.io/BuildConfig \
-  --export-dir "${EXPORT_DIR}" \
-  --overwrite
-{ set +x; } 2>/dev/null
+if [[ "${LOCAL_INPUT}" == "true" ]]; then
+  [[ -f "${BC_FILE}" ]] || { echo "FAIL: BuildConfig fixture not found: ${BC_FILE}"; exit 1; }
+  echo "== 2) create local BuildConfig export fixture =="
+  mkdir -p "${EXPORT_DIR}/resources/${NAMESPACE}"
+  cp "${BC_FILE}" "${EXPORT_DIR}/resources/${NAMESPACE}/BuildConfig_build.openshift.io_v1_${NAMESPACE}_$(basename "${BC_FILE}")"
+else
+  echo "== 2) crane export (only build.openshift.io/BuildConfig via --include-gk) =="
+  set -x
+  "${CRANE_BIN}" export \
+    --kubeconfig "${KC_SRC}" \
+    -n "${NAMESPACE}" \
+    --include-gk build.openshift.io/BuildConfig \
+    --export-dir "${EXPORT_DIR}" \
+    --overwrite
+  { set +x; } 2>/dev/null
+fi
 echo "exported resources:"
 find "${EXPORT_DIR}/resources" -type f 2>/dev/null | sed 's#.*/resources/#  #'
 
 echo
-echo "== 3) crane transform BuildConfigPlugin =="
+echo "== 3) crane transform ${PLUGIN_NAME} =="
 # With SKIP_PLUGIN_BUILD=true, drop --plugin-dir so the embedded plugin is used.
 plugin_dir_flag=(--plugin-dir "${PLUGIN_DIR}")
 [[ "${SKIP_PLUGIN_BUILD}" == "true" ]] && plugin_dir_flag=()
 set -x
-"${CRANE_BIN}" transform BuildConfigPlugin \
+"${CRANE_BIN}" transform "${PLUGIN_NAME}" \
   --export-dir "${EXPORT_DIR}" \
   --transform-dir "${TRANSFORM_DIR}" \
   "${plugin_dir_flag[@]}" \

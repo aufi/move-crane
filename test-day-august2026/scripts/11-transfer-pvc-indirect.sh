@@ -18,7 +18,7 @@
 #
 # Config via env:
 #   NAMESPACE          namespace on both clusters (default: wordpress)
-#   DEST_STORAGE_CLASS destination storage class (default: gp3-csi)
+#   DEST_STORAGE_CLASS destination storage class (default: crc-csi-hostpath-provisioner)
 #   DEST_STORAGE_REQ   destination PVC size      (default: 1Gi)
 #   RCLONE_CONF        path to rclone.conf       (default: <repo>/rclone.conf)
 #   CLOUD_REMOTE       rclone remote name        (default: remote)
@@ -37,12 +37,14 @@
 #                      (crane cleans the cloud staging after each transfer).
 #   CRANE_BIN          migration binary to test (default: crane). Set to the
 #                      downstream build (e.g. mta-ops) to run the same flow.
+#   SOURCE_IMAGE       override transfer image on the source cluster
+#   DESTINATION_IMAGE  override transfer image on the destination cluster
 
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAMESPACE="${NAMESPACE:-wordpress}"
-DEST_STORAGE_CLASS="${DEST_STORAGE_CLASS:-gp3-csi}"
+DEST_STORAGE_CLASS="${DEST_STORAGE_CLASS:-crc-csi-hostpath-provisioner}"
 DEST_STORAGE_REQ="${DEST_STORAGE_REQ:-1Gi}"
 RCLONE_CONF="${RCLONE_CONF:-${REPO_DIR}/rclone.conf}"
 CLOUD_REMOTE="${CLOUD_REMOTE:-remote}"
@@ -51,6 +53,8 @@ ENCRYPT="${ENCRYPT:-false}"
 RUNS="${RUNS:-1}"
 KEEP_CLOUD_DATA="${KEEP_CLOUD_DATA:-false}"
 CRANE_BIN="${CRANE_BIN:-crane}"
+SOURCE_IMAGE="${SOURCE_IMAGE:-}"
+DESTINATION_IMAGE="${DESTINATION_IMAGE:-}"
 export KUBECONFIG="${REPO_DIR}/kubeconfig-merged"
 
 PVCS=(mysql-pv-claim wordpress-pv-claim)
@@ -86,6 +90,8 @@ transfer_all_pvcs() {  # $1 = run number (for logging)
   local extra_flags=()
   [[ "${ENCRYPT}" == "true" ]] && extra_flags+=(--encrypt)
   [[ "${KEEP_CLOUD_DATA}" == "true" ]] && extra_flags+=(--keep-cloud-data)
+  [[ -n "${SOURCE_IMAGE}" ]] && extra_flags+=(--source-image "${SOURCE_IMAGE}")
+  [[ -n "${DESTINATION_IMAGE}" ]] && extra_flags+=(--destination-image "${DESTINATION_IMAGE}")
   for pvc in "${PVCS[@]}"; do
     echo
     echo "--- transfer-pvc (indirect): ${pvc} (run ${run_no}/${RUNS}) ---"

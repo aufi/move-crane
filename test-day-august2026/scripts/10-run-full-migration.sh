@@ -20,6 +20,7 @@
 #   CRANE_BIN        migration binary to test (default: crane). Inherited by every
 #                    sub-step, so `CRANE_BIN=mta-ops scripts/10-...` runs the whole
 #                    flow against the downstream build.
+#   WORK_SUFFIX      suffix for generated export/transform/output directories
 
 set -euo pipefail
 
@@ -28,7 +29,9 @@ SCRIPTS="${REPO_DIR}/scripts"
 NAMESPACE="${NAMESPACE:-wordpress}"
 TRANSFER_SCRIPT="${TRANSFER_SCRIPT:-07-transfer-pvc.sh}"
 CRANE_BIN="${CRANE_BIN:-crane}"
+WORK_SUFFIX="${WORK_SUFFIX:-}"
 export CRANE_BIN
+export WORK_SUFFIX
 KC_SRC="${REPO_DIR}/kubeconfig-src"
 KC_TGT="${REPO_DIR}/kubeconfig-tgt"
 
