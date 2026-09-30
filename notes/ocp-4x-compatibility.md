@@ -111,7 +111,7 @@ If you migrate exported manifests from **OpenShift 4.A to 4.B**, then on top of 
 
 ## Scope beyond OpenShift 4.22
 
-OpenShift 5 release documentation is now public, but migration from OpenShift 4.x to 5.x is outside the scope of this document. It requires a separate review of the OpenShift 5 release notes, migration guidance, OpenShift-specific APIs, operators, and CRD schemas.
+OpenShift 5 release documentation is now public, but migration from OpenShift 4.x to 5.x is outside the scope of this document. See [OpenShift 4.22 to 5.0 migration compatibility](ocp-4.22-to-5.0-migration.md) for the pre-release analysis.
 
 ## Sources
 
