@@ -1,0 +1,7 @@
+repositories:
+  - migtools/crane
+  - migtools/crane-lib
+  - migtools/crane-plugin-buildconfig-to-builds
+  - migtools/crane-plugin-openshift
+  - migtools/rsync-transfer
+  - migtools/mta-crane
