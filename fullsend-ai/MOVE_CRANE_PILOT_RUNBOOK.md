@@ -1,10 +1,28 @@
 # Fullsend Pilot Runbook for aufi/move-crane
 
+> **Superseded on September 21, 2026.** This runbook targets Fullsend `v0.40.0`
+> and `aufi/move-crane`. The active plan is
+> [`FULLSEND_V0.44.0_RUNBOOK.md`](FULLSEND_V0.44.0_RUNBOOK.md), which targets
+> `v0.44.0` and the dedicated pilot repository
+> [`aufi/crane-fullsend-pilot`](https://github.com/aufi/crane-fullsend-pilot).
+> Kept for the reasoning behind the triage-first, read-only opening phase,
+> which the current runbook preserves as stage A.
+
 ## Purpose
 
 Run a small, reversible Fullsend pilot on the public repository <https://github.com/aufi/move-crane>. The initial scope is manual issue triage only. It must not create pull requests, modify repository content, merge changes, or be installed on any `migtools` repository.
 
-This runbook targets Fullsend `v0.40.0`, verified on September 3, 2026. Review the upstream release notes before using a newer version.
+This runbook targets Fullsend `v0.40.0`, released on September 3, 2026. Review the upstream release notes before using a newer version.
+
+## v0.40.0 Release Considerations
+
+The following `v0.40.0` changes affect this runbook:
+
+- The mint and `fullsend github setup` now preflight GitHub App permissions. Missing required permissions fail early with an actionable HTTP 422 and an installation-acceptance URL. Treat a permission failure as a configuration problem; do not bypass it with a broader token or App installation.
+- `packages: read` was added only to the `coder` and `fix` roles. This triage-only pilot does not install the coder App and must not grant Packages access. If a later phase enables code or fix, install or update the coder App with **Packages: Read-only** and accept the pending App permission update before enabling those roles.
+- `runtime: codex` is available, but this pilot keeps the default Claude runtime. Codex requires a separate OpenAI Workload Identity setup and is outside the scope of this triage pilot.
+- Fullsend verifies the effective sandbox policy after sandbox creation. A policy mismatch is a failed run and must block pilot progression until investigated.
+- Repository variables can override runtime, model, and effort in standalone role workflows. Do not add `FULLSEND_*_RUNTIME`, `FULLSEND_*_MODEL`, or `FULLSEND_*_EFFORT` variables during this pilot; preserve the reviewed runtime defaults.
 
 ## Pilot Boundaries
 
@@ -29,7 +47,7 @@ git status --short
 git check-ignore -v test-day-june2026/sample-apps/wordpress/.env
 ```
 
-If the `.env` file is not ignored, add an ignore rule before doing any Fullsend work. Never commit it.
+The root `.gitignore` covers `.env`. Keep it ignored and never commit it.
 
 ## Phase 1: Local Read-Only Smoke Test
 
@@ -69,7 +87,7 @@ podman run --rm --network=host \
     --output-dir /work/output
 ```
 
-Success criteria: the run completes, identifies whether the test issue has enough information, produces no repository mutation, and makes no denied outbound request beyond the configured inference/provider endpoints.
+Success criteria: the run completes, identifies whether the test issue has enough information, reports a verified sandbox policy, produces no repository mutation, and makes no denied outbound request beyond the configured inference/provider endpoints.
 
 ## Phase 2: Provision CI Identity and Inference
 
@@ -85,8 +103,9 @@ fullsend inference provision aufi/move-crane --project "$GCP_PROJECT"
 
 4. Record the printed WIF provider resource name. Treat it as configuration data, not as a secret.
 5. Install [fullsend-ai-triage](https://github.com/apps/fullsend-ai-triage/installations/new) from GitHub's App installation page. Select **Only select repositories** and select only `aufi/move-crane`.
-6. Do not install the Fullsend dispatch App. Per-repository installation does not require it.
-7. For the simplest personal pilot, use the upstream-hosted community mint only after accepting its documented trust model. For a stronger isolation boundary, deploy a dedicated tight mint and allow only `aufi/move-crane`; this requires separate GitHub App credentials and GCP Secret Manager administration.
+6. Confirm the triage App has all required permissions before setup. Resolve any preflight error by accepting the GitHub App update; do not expand its permission set beyond the triage role.
+7. Do not install the Fullsend dispatch App. Per-repository installation does not require it.
+8. For the simplest personal pilot, use the upstream-hosted community mint only after accepting its documented trust model. For a stronger isolation boundary, deploy a dedicated tight mint and allow only `aufi/move-crane`; this requires separate GitHub App credentials and GCP Secret Manager administration.
 
 ## Phase 3: Install the Triage-Only Repository Configuration
 
@@ -106,7 +125,8 @@ Before merging any installer-created pull request or pushing its changes, review
 3. Confirm `.github/workflows/fullsend.yaml` does not check out, build, or execute pull-request code under `pull_request_target`.
 4. Protect `.github/workflows/fullsend.yaml` and `.fullsend/**` with `CODEOWNERS` or branch rules requiring your review.
 5. Confirm the only repository secrets are `FULLSEND_GCP_PROJECT_ID` and `FULLSEND_GCP_WIF_PROVIDER`, and that the expected variables are `FULLSEND_MINT_URL` and `FULLSEND_GCP_REGION`.
-6. Confirm that no local `.env`, GCP JSON credential, token, or generated sandbox output is included in the change.
+6. Confirm no `FULLSEND_*_RUNTIME`, `FULLSEND_*_MODEL`, or `FULLSEND_*_EFFORT` override is set.
+7. Confirm that no local `.env`, GCP JSON credential, token, or generated sandbox output is included in the change.
 
 ## Phase 4: Controlled GitHub Validation
 
@@ -157,3 +177,4 @@ fullsend inference deprovision aufi/move-crane
 - [Running agents locally](https://fullsend.sh/docs/guides/user/running-agents-locally)
 - [Triage agent](https://fullsend.sh/docs/agents/triage)
 - [Fullsend operations](https://fullsend.sh/docs/guides/getting-started/operations)
+- [Fullsend v0.40.0 release notes](https://github.com/fullsend-ai/fullsend/releases/tag/v0.40.0)

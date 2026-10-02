@@ -2,11 +2,11 @@
 
 ## Status
 
-Proposal pending a decision. This document is based on upstream state and documentation verified on September 3, 2026.
+Proposal pending a decision. This document evaluates Fullsend `v0.44.0`, released on October 2, 2026.
 
 ## Summary
 
-[Fullsend](https://github.com/fullsend-ai/fullsend) is an open-source platform for autonomous software-development lifecycle agents: issue triage, implementation, code review, review-finding remediation, prioritization, and retrospectives. The upstream project is licensed under Apache-2.0 and its current stable release is `v0.40.0`.
+[Fullsend](https://github.com/fullsend-ai/fullsend) is an open-source platform for autonomous software-development lifecycle agents: issue triage, implementation, code review, review-finding remediation, prioritization, and retrospectives. The upstream project is licensed under Apache-2.0. This evaluation uses release `v0.44.0`.
 
 Fullsend is neither a Crane runtime dependency nor part of its migration workflow. It is developer infrastructure for a GitHub organization. The upstream `fullsend-ai/fullsend` repository should therefore not be transferred to `migtools`, maintained as a long-term fork, or enabled organization-wide. The recommended approach is an isolated, reversible pilot in one repository, initially limited to the `triage` and `review` roles.
 
@@ -31,7 +31,7 @@ Fullsend is neither a Crane runtime dependency nor part of its migration workflo
 - Repository: <https://github.com/fullsend-ai/fullsend>.
 - Implementation: Go; a public, non-archived project created in March 2026.
 - License: Apache-2.0, compatible with the predominant license of `migtools` repositories.
-- Current release: `v0.40.0`, published on September 3, 2026; the distribution includes Linux and macOS binaries and checksums.
+- Evaluated release: `v0.44.0`, published on October 2, 2026; the distribution includes Linux and macOS binaries and checksums.
 - The project has detailed documentation, ADRs, test workflows, and an explicit security architecture. It is young and changes actively; deployments must use a specific release or commit SHA, never the `main` branch.
 
 ### Operating Model
@@ -50,9 +50,17 @@ Roles are separate GitHub Apps. Their relevant publicly declared permissions are
 | --- | --- | --- |
 | `triage` | `contents: read`, `issues: write`, projects: write | Reads issue context and writes labels and comments. |
 | `review` | `contents: read`, `pull_requests: write`, `issues: write`, `checks: read` | Creates reviews and comments without changing source code. |
-| `coder` / `fix` | `contents: write`, `pull_requests: write`, `issues: write`, `checks: read` | Can create branches, commits, and pull requests. Do not enable during the pilot. |
+| `coder` / `fix` | `contents: write`, `packages: read`, `pull_requests: write`, `issues: write`, `checks: read` | Can create branches, commits, and pull requests. Do not enable during the pilot. |
 
 Fullsend uses `pull_request_target` for its shim workflow. Upstream explicitly states its security condition: the shim must not check out or execute code from an untrusted pull request. Before installation, verify that `migtools` policies permit this trigger and protect `.github/workflows/fullsend.yaml` through `CODEOWNERS` or an equivalent ruleset.
+
+### v0.44.0 Upgrade Impact
+
+- OpenShell `0.1.2` is required for local installations. Its gateway configuration uses schema v2, and custom providers must declare credentials. The migration and a local smoke test must precede any rollout.
+- The existing GitHub App permission preflight still applies. Missing required permissions fail early with HTTP 422 and an App-update acceptance URL. `packages: read` remains relevant only when enabling `coder` or `fix`.
+- GitLab now requires per-role credentials at runtime and removes `--gitlab-bot-token`. This does not affect a GitHub-only pilot, but it is a prerequisite for any future GitLab adoption.
+- `fullsend agent new` scaffolds a custom agent, while safer comment edits fail closed when Fullsend cannot identify its own comment. Both improve a later custom design-agent phase but do not justify enabling it in the initial pilot.
+- OpenAI-only repositories no longer require GCP configuration. The proposed `migtools` pilot remains on Vertex AI/WIF and must not add `FULLSEND_OPENAI_API_KEY` as a fallback.
 
 ## Integration Options
 
@@ -131,3 +139,4 @@ Fullsend can be integrated with `migtools` without coupling it to the Crane runt
 - Architecture and identity: <https://fullsend.sh/docs/architecture>
 - Token mint and WIF infrastructure: <https://fullsend.sh/docs/guides/infrastructure/infrastructure-reference>
 - `pull_request_target` ADR: <https://fullsend.sh/docs/ADRs/0009-pull-request-target-in-shim-workflows>
+- `v0.44.0` release notes: <https://github.com/fullsend-ai/fullsend/releases/tag/v0.44.0>
