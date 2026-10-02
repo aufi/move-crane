@@ -40,11 +40,11 @@ GitHub Project 24 changed while data was being collected. Its auto-add workflow 
 
 | Repository | Open issues | Open PRs | Unlabeled issues | Unassigned issues | Issues without milestone | Project coverage of open work |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `migtools/crane` | 102 | 20 | 8 | 44 | 41 | 101/122 |
-| `migtools/crane-lib` | 17 | 0 | 4 | 11 | 17 | 0/17 |
-| `migtools/crane-plugin-buildconfig-to-builds` | 5 | 2 | 4 | 3 | 5 | 0/7 |
-| `migtools/crane-plugin-openshift` | 0 | 0 | 0 | 0 | 0 | No open work |
-| `migtools/rsync-transfer` | 0 | 1 | 0 | 0 | 0 | 0/1 |
+| [`migtools/crane`](https://github.com/migtools/crane) | [102](https://github.com/migtools/crane/issues?q=is%3Aissue%20is%3Aopen) | [20](https://github.com/migtools/crane/pulls?q=is%3Apr%20is%3Aopen) | [8](https://github.com/migtools/crane/issues?q=is%3Aissue%20is%3Aopen%20no%3Alabel) | [44](https://github.com/migtools/crane/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee) | [41](https://github.com/migtools/crane/issues?q=is%3Aissue%20is%3Aopen%20no%3Amilestone) | [101/122](https://github.com/orgs/migtools/projects/24) |
+| [`migtools/crane-lib`](https://github.com/migtools/crane-lib) | [17](https://github.com/migtools/crane-lib/issues?q=is%3Aissue%20is%3Aopen) | [0](https://github.com/migtools/crane-lib/pulls?q=is%3Apr%20is%3Aopen) | [4](https://github.com/migtools/crane-lib/issues?q=is%3Aissue%20is%3Aopen%20no%3Alabel) | [11](https://github.com/migtools/crane-lib/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee) | [17](https://github.com/migtools/crane-lib/issues?q=is%3Aissue%20is%3Aopen%20no%3Amilestone) | [0/17](https://github.com/orgs/migtools/projects/24) |
+| [`migtools/crane-plugin-buildconfig-to-builds`](https://github.com/migtools/crane-plugin-buildconfig-to-builds) | [5](https://github.com/migtools/crane-plugin-buildconfig-to-builds/issues?q=is%3Aissue%20is%3Aopen) | [2](https://github.com/migtools/crane-plugin-buildconfig-to-builds/pulls?q=is%3Apr%20is%3Aopen) | [4](https://github.com/migtools/crane-plugin-buildconfig-to-builds/issues?q=is%3Aissue%20is%3Aopen%20no%3Alabel) | [3](https://github.com/migtools/crane-plugin-buildconfig-to-builds/issues?q=is%3Aissue%20is%3Aopen%20no%3Aassignee) | [5](https://github.com/migtools/crane-plugin-buildconfig-to-builds/issues?q=is%3Aissue%20is%3Aopen%20no%3Amilestone) | [0/7](https://github.com/orgs/migtools/projects/24) |
+| [`migtools/crane-plugin-openshift`](https://github.com/migtools/crane-plugin-openshift) | [0](https://github.com/migtools/crane-plugin-openshift/issues?q=is%3Aissue%20is%3Aopen) | [0](https://github.com/migtools/crane-plugin-openshift/pulls?q=is%3Apr%20is%3Aopen) | 0 | 0 | 0 | [No open work](https://github.com/orgs/migtools/projects/24) |
+| [`migtools/rsync-transfer`](https://github.com/migtools/rsync-transfer) | [0](https://github.com/migtools/rsync-transfer/issues?q=is%3Aissue%20is%3Aopen) | [1](https://github.com/migtools/rsync-transfer/pulls?q=is%3Apr%20is%3Aopen) | 0 | 0 | 0 | [0/1](https://github.com/orgs/migtools/projects/24) |
 | Total | 124 | 23 | 16 | 58 | 63 | 101/147 |
 
 The `crane` project coverage includes 99 issues and 2 pull requests. One included PR, `crane#885`, is open but marked `Done` in the project.
@@ -136,11 +136,11 @@ There are no open issues. The only open pull request is [`rsync-transfer#77`](ht
 
 | Repository | Open PRs | Drafts | Unlabeled | Unassigned | Without milestone |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `migtools/crane` | 20 | 2 | 9 | 7 | 18 |
-| `migtools/crane-lib` | 0 | 0 | 0 | 0 | 0 |
-| `migtools/crane-plugin-buildconfig-to-builds` | 2 | 0 | 2 | 2 | 2 |
-| `migtools/crane-plugin-openshift` | 0 | 0 | 0 | 0 | 0 |
-| `migtools/rsync-transfer` | 1 | 0 | 1 | 1 | 1 |
+| [`migtools/crane`](https://github.com/migtools/crane/pulls?q=is%3Apr%20is%3Aopen) | 20 | 2 | 9 | 7 | 18 |
+| [`migtools/crane-lib`](https://github.com/migtools/crane-lib/pulls?q=is%3Apr%20is%3Aopen) | 0 | 0 | 0 | 0 | 0 |
+| [`migtools/crane-plugin-buildconfig-to-builds`](https://github.com/migtools/crane-plugin-buildconfig-to-builds/pulls?q=is%3Apr%20is%3Aopen) | 2 | 0 | 2 | 2 | 2 |
+| [`migtools/crane-plugin-openshift`](https://github.com/migtools/crane-plugin-openshift/pulls?q=is%3Apr%20is%3Aopen) | 0 | 0 | 0 | 0 | 0 |
+| [`migtools/rsync-transfer`](https://github.com/migtools/rsync-transfer/pulls?q=is%3Apr%20is%3Aopen) | 1 | 0 | 1 | 1 | 1 |
 
 ### migtools/crane review state
 
@@ -164,11 +164,11 @@ The other 21 open PRs across the five repositories are not project items. This a
 
 | Repository | Available labels | Label model |
 | --- | ---: | --- |
-| `migtools/crane` | 93 | Prow-style plus local and legacy labels |
-| `migtools/crane-lib` | 84 | Prow-style plus library area labels |
-| `migtools/crane-plugin-buildconfig-to-builds` | 12 | Mostly GitHub defaults plus `go` and `hold` |
-| `migtools/crane-plugin-openshift` | 80 | Prow-style |
-| `migtools/rsync-transfer` | 78 | Prow-style |
+| [`migtools/crane`](https://github.com/migtools/crane/labels) | 93 | Prow-style plus local and legacy labels |
+| [`migtools/crane-lib`](https://github.com/migtools/crane-lib/labels) | 84 | Prow-style plus library area labels |
+| [`migtools/crane-plugin-buildconfig-to-builds`](https://github.com/migtools/crane-plugin-buildconfig-to-builds/labels) | 12 | Mostly GitHub defaults plus `go` and `hold` |
+| [`migtools/crane-plugin-openshift`](https://github.com/migtools/crane-plugin-openshift/labels) | 80 | Prow-style |
+| [`migtools/rsync-transfer`](https://github.com/migtools/rsync-transfer/labels) | 78 | Prow-style |
 
 Material inconsistencies:
 
@@ -187,14 +187,14 @@ A central label declaration similar to `konveyor/release-tools` would help, but 
 
 | Milestone | Open items reported by GitHub | Due date |
 | --- | ---: | --- |
-| `v0.11.0` | 28 | None |
-| `v0.11.1` | 7 | 2026-10-13 |
-| `v0.11.2` | 10 | 2026-10-27 |
-| `v0.11.3` | 5 | None |
-| `v0.12.0` | 6 | None |
-| `future` | 7 | None |
-| `v0.10.0` | 0 | None |
-| `release-0.10` | 0 | None |
+| [`v0.11.0`](https://github.com/migtools/crane/milestone/1) | 28 | None |
+| [`v0.11.1`](https://github.com/migtools/crane/milestone/6) | 7 | 2026-10-13 |
+| [`v0.11.2`](https://github.com/migtools/crane/milestone/7) | 10 | 2026-10-27 |
+| [`v0.11.3`](https://github.com/migtools/crane/milestone/8) | 5 | None |
+| [`v0.12.0`](https://github.com/migtools/crane/milestone/2) | 6 | None |
+| [`future`](https://github.com/migtools/crane/milestone/5) | 7 | None |
+| [`v0.10.0`](https://github.com/migtools/crane/milestone/3) | 0 | None |
+| [`release-0.10`](https://github.com/migtools/crane/milestone/4) | 0 | None |
 
 GitHub's milestone item count includes pull requests. The open issue-only distribution is 27 for `v0.11.0`, 7 for `v0.11.1`, 10 for `v0.11.2`, 5 for `v0.11.3`, 6 for `v0.12.0`, 6 for `future`, and 41 without a milestone.
 
@@ -234,11 +234,11 @@ The later project query found 529 historical items from the five configured repo
 
 | Repository | Project items |
 | --- | ---: |
-| `migtools/crane` | 518 |
-| `migtools/crane-lib` | 3 |
-| `migtools/crane-plugin-buildconfig-to-builds` | 3 |
-| `migtools/crane-plugin-openshift` | 5 |
-| `migtools/rsync-transfer` | 0 |
+| [`migtools/crane`](https://github.com/orgs/migtools/projects/24) | 518 |
+| [`migtools/crane-lib`](https://github.com/orgs/migtools/projects/24) | 3 |
+| [`migtools/crane-plugin-buildconfig-to-builds`](https://github.com/orgs/migtools/projects/24) | 3 |
+| [`migtools/crane-plugin-openshift`](https://github.com/orgs/migtools/projects/24) | 5 |
+| [`migtools/rsync-transfer`](https://github.com/orgs/migtools/projects/24) | 0 |
 
 Historical presence does not mean current backlog coverage. All open items outside `crane` are absent.
 
@@ -246,11 +246,11 @@ Historical presence does not mean current backlog coverage. All open items outsi
 
 | Repository | Open issues in project | Open PRs in project | Missing open issues | Missing open PRs |
 | --- | ---: | ---: | ---: | ---: |
-| `migtools/crane` | 99/102 | 2/20 | 3 | 18 |
-| `migtools/crane-lib` | 0/17 | 0/0 | 17 | 0 |
-| `migtools/crane-plugin-buildconfig-to-builds` | 0/5 | 0/2 | 5 | 2 |
-| `migtools/crane-plugin-openshift` | 0/0 | 0/0 | 0 | 0 |
-| `migtools/rsync-transfer` | 0/0 | 0/1 | 0 | 1 |
+| [`migtools/crane`](https://github.com/orgs/migtools/projects/24) | 99/102 | 2/20 | 3 | 18 |
+| [`migtools/crane-lib`](https://github.com/orgs/migtools/projects/24) | 0/17 | 0/0 | 17 | 0 |
+| [`migtools/crane-plugin-buildconfig-to-builds`](https://github.com/orgs/migtools/projects/24) | 0/5 | 0/2 | 5 | 2 |
+| [`migtools/crane-plugin-openshift`](https://github.com/orgs/migtools/projects/24) | 0/0 | 0/0 | 0 | 0 |
+| [`migtools/rsync-transfer`](https://github.com/orgs/migtools/projects/24) | 0/0 | 0/1 | 0 | 1 |
 
 The three missing `crane` issues are [`#282`](https://github.com/migtools/crane/issues/282), [`#294`](https://github.com/migtools/crane/issues/294), and [`#317`](https://github.com/migtools/crane/issues/317). All are older test automation issues.
 

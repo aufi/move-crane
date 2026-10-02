@@ -1,0 +1,2 @@
+# No third-party Python packages are required.
+# Runtime: Python 3.11 or newer and the GitHub CLI (gh).

@@ -1,4 +1,4 @@
-# Crane project management
+# Crane development project
 
 This directory will contain automation for managing work across the Crane GitHub project and its repositories.
 
@@ -7,7 +7,31 @@ This directory will contain automation for managing work across the Crane GitHub
 - GitHub project configuration is stored in `project.yaml`.
 - Participating repositories are listed in `repositories.yaml`.
 - The current backlog baseline and automation assessment are documented in `backlog-analysis-2026-09-30.md`.
-- Automation will be added after its requirements and workflow are defined.
+- The latest generated overview with GitHub links is stored in `backlog-status.md`.
+- The corresponding machine-readable snapshot is stored in `backlog-data.json`.
+
+## Updating the backlog overview
+
+The scripts require Python 3.11 or newer and an authenticated `gh` CLI with access to the configured repositories and GitHub Project. There are no third-party Python dependencies; this is recorded in `requirements.txt`.
+
+Run the complete update from the repository root:
+
+```bash
+python3 project-mgmt/update_backlog.py
+```
+
+The update reads `repositories.yaml` and `project.yaml`, then atomically replaces `backlog-data.json` and `backlog-status.md`. It does not modify GitHub data.
+
+The collection and rendering phases can also run separately:
+
+```bash
+python3 project-mgmt/collect_backlog.py --output project-mgmt/backlog-data.json
+python3 project-mgmt/render_backlog.py \
+  --input project-mgmt/backlog-data.json \
+  --output project-mgmt/backlog-status.md
+```
+
+The scripts use only the Python standard library. `backlog-data.json` keeps the source data used by the report so that later automation can evaluate different policies without querying GitHub again.
 
 ## Related tooling
 
