@@ -9,6 +9,7 @@ This directory will contain automation for managing work across the Crane GitHub
 - The current backlog baseline and automation assessment are documented in `backlog-analysis-2026-09-30.md`.
 - The current milestone analysis is documented in `milestone-analysis-2026-10-08.md`.
 - The current pull request check analysis is documented in `pr-checks-analysis-2026-10-08.md`.
+- The proposed issue and Jira tracking check is documented in `pr-tracking-check-proposal.md`.
 - The latest generated overview with GitHub links is stored in `backlog-status.md`.
 - The corresponding machine-readable snapshot is stored in `backlog-data.json`.
 
