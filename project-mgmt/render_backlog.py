@@ -256,6 +256,46 @@ def render(snapshot: dict[str, Any]) -> str:
         )
     )
 
+    crane_data = snapshot["repositories"].get("migtools/crane")
+    if crane_data is not None:
+        lines.extend(["", "### migtools/crane check results", ""])
+        check_totals: dict[str, Counter[str]] = {}
+        for pull_request in crane_data["pullRequests"]:
+            for check in pull_request.get("statusCheckRollup") or []:
+                name = check.get("name") or "Unnamed check"
+                conclusion = check.get("conclusion") or check.get("status") or "PENDING"
+                if conclusion == "SKIPPED":
+                    state = "skipped"
+                elif conclusion in FAILURE_CONCLUSIONS:
+                    state = "failing"
+                elif conclusion in SUCCESS_CONCLUSIONS:
+                    state = "passing"
+                else:
+                    state = "pending"
+                check_totals.setdefault(name, Counter())[state] += 1
+        check_rows = [
+            [
+                check_name,
+                sum(counts.values()),
+                counts["passing"],
+                counts["failing"],
+                counts["pending"],
+                counts["skipped"],
+            ]
+            for check_name, counts in sorted(
+                check_totals.items(), key=lambda item: (-sum(item[1].values()), item[0])
+            )
+        ]
+        lines.extend(
+            table(
+                ["Check", "Observed", "Passing", "Failing", "Pending", "Skipped"],
+                check_rows,
+            )
+        )
+        lines.append(
+            "Counts are check-run observations across open PRs. A PR rerun can produce more than one observation."
+        )
+
     lines.extend(["", "## Labels", ""])
     label_rows: list[list[Any]] = []
     for repository in repositories:

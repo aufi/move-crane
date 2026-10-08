@@ -14,7 +14,7 @@
       "migtools/mta-crane"
     ]
   },
-  "generatedAt": "2026-10-08T13:21:49+00:00",
+  "generatedAt": "2026-10-08T13:31:33+00:00",
   "project": {
     "fields": [
       {
@@ -22153,12 +22153,12 @@
             },
             {
               "__typename": "CheckRun",
-              "completedAt": "0001-01-01T00:00:00Z",
-              "conclusion": "",
+              "completedAt": "2026-10-08T13:22:02Z",
+              "conclusion": "SUCCESS",
               "detailsUrl": "https://github.com/migtools/crane/actions/runs/37777409643/job/113311695426",
               "name": "e2e-indirect-tier1",
               "startedAt": "2026-10-08T12:31:09Z",
-              "status": "IN_PROGRESS",
+              "status": "COMPLETED",
               "workflowName": "E2E Tests PR Tester (Indirect Migration)"
             },
             {
