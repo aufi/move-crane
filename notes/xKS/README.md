@@ -93,6 +93,7 @@ This is only the initial baseline. Every report must record its own Crane commit
 ## Related Notes
 
 - [OCP 4.x compatibility gaps](../ocp-4x-compatibility.md)
+- [OpenShift 4.22 to 5.0 migration compatibility](../ocp-4.22-to-5.0-migration.md)
 - [OCP target version impact analysis](OCP_TARGET_VERSIONS.md)
 - [Namespace-scoped applications with hidden cluster dependencies](../namespace-app-cluster-dependencies.md)
 - [Stateful workload migration flow](../data-migrations/STATEFUL_FLOW.md)

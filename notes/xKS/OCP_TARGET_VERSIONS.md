@@ -4,25 +4,26 @@
 
 The migration direction remains xKS to OCP. The target can be either OCP 4 or OCP 5, but each exact target release is a separate compatibility profile.
 
-At the time of this analysis, the public Red Hat OpenShift lifecycle page describes OCP 4 as the current major line, and this repository's existing compatibility research does not identify a stable public OCP 5 API-removal matrix. OCP 5 support is therefore a planned capability, not an inferred compatibility claim.
+Public development branches now contain draft OpenShift 5.0 release, update, and API material. They do not replace final release documentation or validation against a real cluster. OCP 5 support is therefore a planned capability, not an inferred compatibility claim.
 
-Until Red Hat publishes release-specific OCP 5 API, security, networking, storage, and upgrade documentation and a real cluster profile passes validation:
+Until Red Hat publishes final release-specific OCP 5 API, security, networking, storage, and upgrade documentation and a real cluster profile passes validation:
 
 - OCP 5 profiles default to `Unknown` before testing.
 - A partially tested OCP 5 profile can be at most `Experimental`.
 - OCP 4 results must not be reused as OCP 5 evidence.
-- No guessed OCP 5 API or behavior may be hardcoded into Crane.
+- No unverified OCP 5 API or behavior may be hardcoded into Crane.
 
 References:
 
 - [Red Hat OpenShift Container Platform life cycle](https://access.redhat.com/support/policy/updates/openshift)
-- [Existing OCP 4.x and future OCP 5 compatibility notes](../ocp-4x-compatibility.md)
+- [OCP 4.x compatibility notes](../ocp-4x-compatibility.md)
+- [OpenShift 4.22 to 5.0 pre-release compatibility analysis](../ocp-4.22-to-5.0-migration.md)
 
 ## Compatibility Dimensions Affected by the Target Major
 
 ### Kubernetes API Baseline
 
-OCP minor releases embed different Kubernetes minor versions. A future OCP 5 release will likely move the baseline further and can remove APIs still accepted by some xKS source versions.
+The public OpenShift 4.22 and draft 5.0 documentation currently map both releases to Kubernetes 1.35. This removes one expected source of version skew, but the final target API and OpenShift-specific behavior still require validation.
 
 For the exact target cluster, discovery must verify:
 

@@ -54,7 +54,7 @@ For each source `apiVersion`, check against the exact OCP target:
 - removed and deprecated APIs between minor versions,
 - whether the API server can convert it or Crane must do so.
 
-OCP 4-specific gaps are summarized in [OCP 4.x compatibility gaps](../ocp-4x-compatibility.md). OCP 5 evidence rules and likely impact areas are defined in [OCP_TARGET_VERSIONS.md](OCP_TARGET_VERSIONS.md).
+OCP 4-specific gaps are summarized in [OCP 4.x compatibility gaps](../ocp-4x-compatibility.md). The public OCP 5 evidence is summarized in [OpenShift 4.22 to 5.0 migration compatibility](../ocp-4.22-to-5.0-migration.md). OCP 5 evidence rules and impact areas are defined in [OCP_TARGET_VERSIONS.md](OCP_TARGET_VERSIONS.md).
 
 ### Existing Application CRDs and Controllers
 
