@@ -283,8 +283,38 @@ def render(snapshot: dict[str, Any]) -> str:
 
     lines.extend(["", "## Open milestones", ""])
     milestone_rows: list[list[Any]] = []
+    milestone_summary_rows: list[list[Any]] = []
     for repository in repositories:
-        milestones = snapshot["repositories"][repository]["milestones"]
+        data = snapshot["repositories"][repository]
+        milestones = data["milestones"]
+        releases = data.get("releases", [])
+        latest_release = next(
+            (release for release in releases if release.get("isLatest")), None
+        )
+        no_due_date = count_if(milestones, lambda item: not item.get("due_on"))
+        empty = count_if(milestones, lambda item: item.get("open_issues", 0) == 0)
+        issues_without_milestone = count_if(
+            data["issues"], lambda item: item.get("milestone") is None
+        )
+        latest_release_cell = "None"
+        if latest_release:
+            latest_release_cell = markdown_link(
+                latest_release.get("tagName") or latest_release.get("name"),
+                latest_release["url"],
+            )
+        milestone_summary_rows.append(
+            [
+                markdown_link(repository, repository_url(repository, "/milestones")),
+                len(milestones),
+                no_due_date,
+                empty,
+                linked_cell(
+                    issues_without_milestone,
+                    issue_query_url(repository, "no:milestone"),
+                ),
+                latest_release_cell,
+            ]
+        )
         if not milestones:
             milestone_rows.append(
                 [
@@ -312,6 +342,20 @@ def render(snapshot: dict[str, Any]) -> str:
         table(
             ["Repository", "Milestone", "Open items", "Due date"],
             milestone_rows,
+        )
+    )
+    lines.extend(["", "### Milestone hygiene", ""])
+    lines.extend(
+        table(
+            [
+                "Repository",
+                "Open milestones",
+                "Without due date",
+                "Empty",
+                "Open issues without milestone",
+                "Latest release",
+            ],
+            milestone_summary_rows,
         )
     )
 

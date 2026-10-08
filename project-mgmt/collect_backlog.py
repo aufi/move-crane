@@ -160,11 +160,30 @@ def collect_repository(repository: str) -> dict[str, Any]:
             f"repos/{repository}/milestones?state=open&per_page=100",
         ]
     )
+    releases = run_gh(
+        [
+            "release",
+            "list",
+            "--repo",
+            repository,
+            "--limit",
+            "100",
+            "--json",
+            "name,tagName,publishedAt,isLatest,isPrerelease,isDraft",
+        ]
+    )
     return {
         "issues": issues,
         "pullRequests": pull_requests,
         "labels": labels,
         "milestones": milestones,
+        "releases": [
+            {
+                **release,
+                "url": f"https://github.com/{repository}/releases/tag/{release['tagName']}",
+            }
+            for release in releases
+        ],
     }
 
 
