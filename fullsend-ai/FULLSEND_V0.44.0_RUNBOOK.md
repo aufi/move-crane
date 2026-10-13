@@ -102,7 +102,7 @@ Two known properties of this setup:
 | Target repository | `aufi/crane-fullsend-pilot` | 2026-09-21 |
 | Fullsend version | `v0.44.0` | 2026-10-02 |
 | Runtime | `codex` | 2026-10-02 |
-| Role phasing | Stage A `triage,review`, then stage B `coder` | 2026-09-21 |
+| Enabled roles | `triage,review,coder` from initial setup; controlled validation order | 2026-10-12 |
 | Inference provider | OpenAI API key in GitHub Actions secret | 2026-10-02 |
 | OpenAI project, budget, and key owner | **Open.** Required before section 8. | — |
 | Token mint | **Open.** Community mint or private mint, see section 5. | — |
@@ -110,14 +110,15 @@ Two known properties of this setup:
 
 ## Scope and role phasing
 
-Do not enable all roles at once. Enable read-mostly roles first, prove them,
-then add write capability. This matches the staged approach in
-`FULLSEND_MIGTOOLS_EVALUATION.md`.
+Install all required roles in one setup so the pilot can exercise the complete
+workflow. Still validate the roles in order: triage, review, code, then fix.
+The `coder` role enables both the `code` and `fix` agents; only dedicated pilot
+issues and pull requests may trigger its write capability.
 
-| Stage | Roles | Capability added | Exit condition |
+| Validation order | Enabled roles | Capability exercised | Exit condition |
 | --- | --- | --- | --- |
-| A | `triage`, `review` | Comments, labels, reviews. No content write. | Section 11 criteria met for triage and review. |
-| B | `coder` | Branches, commits, pull requests. Provides `code` and `fix`. | Section 11 criteria met for code and fix. |
+| 1 | `triage`, `review` | Comments, labels, reviews. No content write. | Triage and review checks in section 11 pass. |
+| 2 | `coder` | Branches, commits, pull requests. Provides `code` and `fix`. | Code and fix checks in section 11 pass. |
 
 Do not enable `retro` or `prioritize`. A per-repository installation does not
 need the `fullsend-ai-fullsend` dispatch App; upstream confirms per-repo mode
@@ -140,8 +141,8 @@ Only users with write permission or higher can run `/fs-code` and `/fs-fix`.
 
 1. Restrict the GitHub Apps to `aufi/crane-fullsend-pilot`.
 2. Do not grant Fullsend permission to merge, administer the repository, or
-   access other repositories. Enable `packages: read` only on the Coder App
-   when stage B begins; do not grant package write access.
+   access other repositories. The Coder App requires `packages: read`; do not
+   grant package write access.
 3. Branch protection on `main` is a **precondition, not an assumption**. It was
    established before installation because a new repository has no protection
    by default. Re-verify it before each stage and after every Fullsend upgrade.
@@ -155,7 +156,8 @@ Only users with write permission or higher can run `/fs-code` and `/fs-fix`.
    protected set is `.github/workflows/**`, `.fullsend/**`,
    `.github/CODEOWNERS`, `AGENTS.md`, and `PILOT.md`.
 8. Agents must never open a pull request against `migtools/crane` or any other
-   repository. `PILOT.md` states this; verify it in practice during stage B.
+   repository. `PILOT.md` states this; verify it during write-capable
+   validation.
 9. Do not enable `CODE_AUTO_MERGE`.
 
 By default, the review agent runs when a pull request is opened, updated, or
@@ -200,8 +202,10 @@ OpenShell gateway and authenticated `gh` configuration:
 fullsend() {
   podman run --rm --network=host \
     -v "$HOME/.config/openshell:/root/.config/openshell:ro" \
+    -v "$HOME/.local/state/openshell:/root/.local/state/openshell:ro" \
     -v "$HOME/.config/gh:/root/.config/gh:ro" \
     -e GH_TOKEN \
+    -e GITHUB_TOKEN \
     "$FULLSEND_RUNNER_IMAGE" "$@"
 }
 
@@ -218,16 +222,63 @@ Fullsend `v0.44.0` pins OpenShell to version `0.1.2`, commit
 `6648bd0c290efbc41ba131ee9831ee45cd431f94`, per
 `.github/scripts/openshell-version.sh` at that tag.
 
-1. Install Podman.
-2. Install OpenShell `0.1.2` according to its upstream documentation and
-   migrate the gateway configuration to schema v2.
-3. Declare credentials in any custom OpenShell provider.
-4. Start the OpenShell gateway.
-5. Verify:
+1. Install Podman 5.x and enable its rootless user socket:
+
+```bash
+systemctl --user enable --now podman.socket
+systemctl --user status podman.socket
+```
+
+2. Do not use the OpenShell Snap package with Podman: the Snap gateway requires
+   Docker Engine and cannot auto-detect Podman. Remove the Snap package before
+   installing the RPM-based OpenShell distribution:
+
+```bash
+sudo snap remove --purge openshell
+```
+
+3. Download the upstream installer at the exact OpenShell release tag, inspect
+   it, then install the Fedora/RPM distribution:
+
+```bash
+curl -LsSf \
+  https://raw.githubusercontent.com/NVIDIA/OpenShell/v0.1.2/install.sh \
+  -o /tmp/openshell-v0.1.2-install.sh
+less /tmp/openshell-v0.1.2-install.sh
+OPENSHELL_VERSION=v0.1.2 sh /tmp/openshell-v0.1.2-install.sh
+```
+
+4. The RPM installer creates and starts a user-level gateway at
+   `https://127.0.0.1:17670`. It registers the gateway automatically; do not
+   run `openshell gateway add` unless `openshell gateway list` remains empty.
+5. If the RPM-seeded `~/.config/openshell/gateway.toml` is a schema-v1 file,
+   migrate its Podman selection before restarting the gateway:
+
+```toml
+[openshell]
+version = 2
+
+[openshell.gateway]
+compute_driver = "podman"
+```
+
+Replace the schema-v1 `compute_drivers = ["podman"]` entry rather than adding
+the new scalar alongside it. Validate and restart the user service:
+
+```bash
+openshell-gateway config preflight --path "$HOME/.config/openshell/gateway.toml"
+systemctl --user restart openshell-gateway
+```
+
+6. Declare credentials in any custom OpenShell provider.
+7. Verify:
 
 ```bash
 podman version
 openshell --version
+systemctl --user status openshell-gateway
+openshell gateway list
+openshell status
 fullsend --version
 ```
 
@@ -288,13 +339,8 @@ and can create branches, commits, and pull requests.
 On each installation page, select `Only select repositories` and choose only
 `aufi/crane-fullsend-pilot`.
 
-Stage A:
-
 - [fullsend-ai-triage](https://github.com/apps/fullsend-ai-triage/installations/new)
 - [fullsend-ai-review](https://github.com/apps/fullsend-ai-review/installations/new)
-
-Stage B, only after stage A passes:
-
 - [fullsend-ai-coder](https://github.com/apps/fullsend-ai-coder/installations/new)
 
 The Coder App provides both the `code` and `fix` agents. There is no separate
@@ -302,37 +348,33 @@ Fix App. Do not install the `fullsend-ai-fullsend` dispatch App.
 
 ## 7. Prepare setup permissions
 
-`fullsend github setup` in per-repo mode requires repository admin access and,
-per the upstream CLI reference for `v0.44.0`, the classic OAuth scopes **`repo`
-and `workflow`**. A fine-grained token is not documented as supported for this
-command; do not assume Contents/Workflows/Secrets permissions are sufficient
-without testing.
+`fullsend github setup` in per-repo mode requires repository admin access. A
+classic token needs the **`repo`** and **`workflow`** scopes. Fullsend `v0.44.0`
+also supports a fine-grained token scoped to the pilot repository with
+read/write access to Contents, Workflows, Secrets, Variables, and Pull requests,
+plus read-only Metadata.
 
-The ambient `gh` session in this environment authenticates through a
-`GITHUB_TOKEN` environment variable holding a classic token with `public_repo`
-but neither `repo` nor `workflow`. That variable takes precedence over the
-stored `gh` credential, so it must be cleared for setup:
+The current `gh` session is authenticated as `aufi` and reports `repo` and
+`workflow` scopes. Re-check immediately before setup. `GH_TOKEN` takes
+precedence over `GITHUB_TOKEN`, which takes precedence over the stored `gh`
+credential:
 
 ```bash
-unset GITHUB_TOKEN
-export GH_TOKEN='<classic PAT with repo + workflow>'
 gh auth status
 ```
 
-Use this token only for setup. Revoke it or remove it from the environment
-afterwards. Agents use short-lived GitHub App tokens from the mint.
+Use a token only for setup, keep it out of logs, and remove it from the
+environment afterwards. Agents use short-lived GitHub App tokens from the mint.
 
 ## 8. Run per-repository setup
 
 Use the Codex runtime with an explicit OpenAI model. Codex is experimental and
-does not have the Claude review/retro sub-agent roster; retain the staged pilot
-and evaluate review quality before enabling the coder role.
-
-Stage A:
+does not have the Claude review/retro sub-agent roster; evaluate review quality
+before running write-capable validation.
 
 ```bash
 fullsend github setup aufi/crane-fullsend-pilot \
-  --agents triage,review \
+  --agents triage,review,coder \
   --runtime codex \
   --fullsend-ref v0.44.0
 ```
@@ -349,13 +391,20 @@ agents:
   - name: review
     runtime: codex
     model: openai/gpt-5.6-luna
+  - name: code
+    runtime: codex
+    model: openai/gpt-5.6-luna
+  - name: fix
+    runtime: codex
+    model: openai/gpt-5.6-luna
 ```
 
-Stage B re-runs the same command with `--agents triage,review,coder`, then
-adds equivalent `code` and `fix` entries to `.fullsend/config.yaml`. A re-run
-refreshes managed workflow files and, because `--agents` targets a config key,
-updates that key while keeping the rest. Note that passing such a flag
-re-serializes the file and does not preserve hand-written comments.
+The installed roles may all run, but validate them only in the order defined in
+this document and use dedicated pilot issues and pull requests for `code` and
+`fix`. A later re-run refreshes managed workflow files and, because `--agents`
+targets a config key, updates that key while keeping the rest. Note that
+passing such a flag re-serializes the file and does not preserve hand-written
+comments.
 
 For a private mint, add:
 
@@ -394,6 +443,23 @@ Setup adds a workflow file, so the merge will require the three existing status
 checks to pass. Confirm the new workflow does not itself become a required
 check until it has demonstrated a green run.
 
+## 9.1 Post-Merge Readiness Check
+
+After the setup pull request is merged, verify these repository-level facts
+before triggering an agent:
+
+1. `main` contains `.fullsend/config.yaml` with roles `triage`, `review`, and
+   `coder`, and every enabled agent uses `codex` with an explicit
+   `openai/gpt-5.6-luna` model.
+2. The repository secret `FULLSEND_OPENAI_API_KEY` exists. Never retrieve,
+   print, or commit its value.
+3. Repository variables include `FULLSEND_MINT_URL=https://mint.fullsend.sh`
+   and `FULLSEND_PER_REPO_INSTALL=true`.
+4. The `fullsend` workflow is active. `Prioritize` may also appear as a
+   scaffolded workflow, but the `prioritize` role remains disabled because it
+   is absent from `.fullsend/config.yaml`.
+5. Branch protection and required checks on `main` are unchanged.
+
 ## 10. Run controlled validation
 
 Test issues and pull requests must not contain secrets or security reports.
@@ -401,21 +467,21 @@ Source realistic material by paraphrasing open upstream issues from
 `migtools/crane`; never copy a security report. After every run, inspect the
 Actions log, comments, label changes, OpenAI project cost, and Actions usage.
 
-### Triage, stage A
+### Triage, validation order 1
 
-1. Create an incomplete issue.
+1. Create an intentionally incomplete, non-production pilot issue.
 2. Run `/fs-triage`.
 3. Expect a request for more information and the `needs-info` label.
 4. Add the requested information and run `/fs-triage` again.
 5. Verify the category and any resulting `ready-to-code` label.
 
-Warning: `ready-to-code` automatically starts the code agent once stage B is
-enabled. During stage A the label is inert, which makes stage A the right time
-to learn how often triage applies it.
+Warning: `ready-to-code` automatically starts the code agent. Test triage only
+with deliberately small, approved pilot issues after the initial smoke test.
 
-### Review, stage A
+### Review, validation order 1
 
-1. Open a small human-authored pull request and run `/fs-review`.
+1. Open a small human-authored, documentation-only pull request and run
+   `/fs-review`.
 2. Check the relevance of findings and any inline comments.
 3. Check for `ready-for-merge`, `requires-manual-review`, or `rejected` labels.
 4. Confirm the review agent did not write to the branch.
@@ -425,11 +491,12 @@ output is too noisy, set `REVIEW_FINDING_SEVERITY_THRESHOLD=medium` in the
 review harness. Do not add this option to the workflow `env` block, which is
 reserved for infrastructure configuration.
 
-### Code, stage B
+### Code, validation order 2
 
 1. Prepare a small, unambiguous issue, for example a unit test or a contained
    bug fix.
-2. Run `/fs-code` as a user with write permission.
+2. Run `/fs-code` as a user with write permission only after triage and review
+   checks are acceptable.
 3. Verify that the agent created a new branch and pull request, not a commit to
    `main`.
 4. Verify the pull request targets `aufi/crane-fullsend-pilot` and no other
@@ -439,10 +506,11 @@ reserved for infrastructure configuration.
 7. Verify that `go.yml`, `lint.yml`, and `pr-title-check.yml` ran and that the
    merge remained blocked pending your approval.
 
-### Fix, stage B
+### Fix, validation order 2
 
 1. Let the review agent request a change on a code-agent pull request, or run
-   `/fs-fix <specific instruction>`.
+   `/fs-fix <specific instruction>` only after the code-agent pull request is
+   reviewed.
 2. Verify that the fix agent changed only the pull request branch and added a
    commit.
 3. Verify the tests and subsequent review.
@@ -453,6 +521,10 @@ reserved for infrastructure configuration.
 The fix agent does not read individual inline comments, general pull request
 discussion, or CI logs. Include a specific inline request in the `/fs-fix`
 instruction.
+
+After every validation run, inspect the GitHub Actions log, the agent's
+comments and labels, branch/commit ownership, and OpenAI project usage before
+continuing to the next validation order.
 
 ## 11. Acceptance criteria
 
@@ -469,8 +541,8 @@ stage enables. Continue only if:
 - Costs remained within the defined budget.
 - One administrator can audit and remove the installation.
 
-Stage A must meet these criteria before stage B is enabled. Record the results
-so they can feed the decision in `FULLSEND_MIGTOOLS_EVALUATION.md`.
+Record results separately for the read-only and write-capable roles so they can
+feed the decision in `FULLSEND_MIGTOOLS_EVALUATION.md`.
 
 ## 12. Updates
 
