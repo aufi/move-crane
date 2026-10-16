@@ -58,6 +58,64 @@ a later custom orchestration agent. It must not assume that a Crane code-agent
 run will automatically create and merge a library pull request, update the
 Crane dependency, and validate the combined result.
 
+## Cross-Repository Issue Creation
+
+The current Crane pilot configuration permits issue creation only in these
+repositories:
+
+```yaml
+create_issues:
+  allow_targets:
+    repos:
+      - aufi/crane-fullsend-pilot
+      - fullsend-ai/fullsend
+```
+
+`aufi/crane-lib-pilot` is not currently an allowed issue target. Adding it to
+this list is necessary but not sufficient. The list expresses agent intent; it
+does not grant GitHub API access or authorize a mint to issue a token for the
+other repository.
+
+To let an agent in `aufi/crane-fullsend-pilot` create an issue in
+`aufi/crane-lib-pilot`, all of these conditions must be satisfied:
+
+1. Add `aufi/crane-lib-pilot` to the Crane pilot's
+   `create_issues.allow_targets.repos` list through a reviewed configuration
+   pull request.
+2. Install the relevant Fullsend GitHub App, initially
+   `fullsend-ai-triage`, on `aufi/crane-lib-pilot`, restricted to that
+   repository and with the required issue permission.
+3. On the target repository, set the repo-level Actions variable for the
+   relevant mint role. For triage, this is
+   `FULLSEND_FOREIGN_TRIAGE_REPOS=aufi/crane-fullsend-pilot`.
+4. Verify that the installed App and hosted community mint support the
+   `actions_variables: read` permission required to read the target's
+   repo-level FOREIGN variable. If permission preflight rejects the request,
+   do not widen the grant; resolve the App permission or use a separately
+   reviewed mint configuration.
+
+The repo-level FOREIGN grant is set on the **target** repository and names the
+**caller** repository. It permits only a token scoped to that exact target;
+it does not authorize organization-wide access.
+
+`crane-lib-pilot` does not need its own `.fullsend/` directory, workflow, or
+inference secret solely to receive an issue from the Crane pilot. It does need
+the relevant App installation and a narrow repo-level grant. A full Fullsend
+installation becomes necessary only when agents must run inside the library
+repository itself.
+
+## Cross-Repository Pull Requests
+
+Adding `crane-lib-pilot` to `create_issues` does not alter code-agent pull
+request behavior. A standard code-agent run publishes branches and pull
+requests only in its target repository. The Crane pilot's `PILOT.md` also
+explicitly forbids opening pull requests in another repository.
+
+An implementation pull request in `crane-lib-pilot` therefore requires a
+separate Fullsend run targeted at the library repository, which in turn
+requires its own pilot installation, or a separately designed and reviewed
+cross-repository automation path.
+
 ## Required Preparation
 
 Before the first Fullsend run in `crane-lib-pilot`:
@@ -108,6 +166,10 @@ Create a library issue in `aufi/crane-lib-pilot` that links back to the Crane
 issue and records the API or behavior change, compatibility expectations, and
 library-level tests.
 
+The smallest safe next step is to create these linked issues manually. Validate
+the problem decomposition and issue templates before enabling automated
+cross-repository issue creation or a library-repository Fullsend installation.
+
 ### 2. Implement the Library Change
 
 Run Fullsend or a human implementation against the library issue only. Review
@@ -142,3 +204,8 @@ agent or remains a human-coordinated workflow.
   reviewed.
 - Sharing secrets, GitHub App installations, or branch-protection exceptions
   across the pilot repositories.
+
+## Sources
+
+- [Fullsend `create_issues` configuration reference](https://github.com/fullsend-ai/fullsend/blob/v0.44.0/docs/reference/config-reference.md#create_issues)
+- [ADR 0083: Repo-level foreign allow-list](https://github.com/fullsend-ai/fullsend/blob/v0.44.0/docs/ADRs/0083-repo-level-foreign-allow-list.md)
