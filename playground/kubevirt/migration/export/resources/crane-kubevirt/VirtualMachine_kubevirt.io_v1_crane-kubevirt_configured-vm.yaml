@@ -1,0 +1,174 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kubevirt.io/v1","kind":"VirtualMachine","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"configured-vm","app.kubernetes.io/part-of":"crane-kubevirt-test","crane.konveyor.io/test":"kubevirt"},"name":"configured-vm","namespace":"crane-kubevirt"},"spec":{"runStrategy":"Always","template":{"metadata":{"labels":{"app.kubernetes.io/name":"configured-vm","app.kubernetes.io/part-of":"crane-kubevirt-test"}},"spec":{"domain":{"devices":{"autoattachPodInterface":false,"disks":[{"disk":{"bus":"virtio"},"name":"rootdisk"},{"disk":{"bus":"virtio"},"name":"cloudinitdisk"},{"disk":{"bus":"virtio"},"name":"datadisk"}]},"resources":{"requests":{"memory":"128Mi"}}},"volumes":[{"containerDisk":{"image":"quay.io/kubevirt/cirros-container-disk-demo:latest"},"name":"rootdisk"},{"cloudInitNoCloud":{"userData":"#cloud-config\nhostname: configured-vm\nwrite_files:\n- path: /tmp/crane-kubevirt-test\n  content: migrated-by-crane\n"},"name":"cloudinitdisk"},{"name":"datadisk","persistentVolumeClaim":{"claimName":"configured-data"}}]}}}}
+    kubevirt.io/latest-observed-api-version: v1
+    kubevirt.io/storage-observed-api-version: v1
+  creationTimestamp: "2026-10-20T07:12:31Z"
+  finalizers:
+  - kubevirt.io/virtualMachineControllerFinalize
+  generation: 3
+  labels:
+    app.kubernetes.io/name: configured-vm
+    app.kubernetes.io/part-of: crane-kubevirt-test
+    crane.konveyor.io/test: kubevirt
+  managedFields:
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:kubevirt.io/latest-observed-api-version: {}
+          f:kubevirt.io/storage-observed-api-version: {}
+        f:finalizers:
+          .: {}
+          v:"kubevirt.io/virtualMachineControllerFinalize": {}
+    manager: virt-controller
+    operation: Update
+    time: "2026-10-20T07:12:31Z"
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/name: {}
+          f:app.kubernetes.io/part-of: {}
+          f:crane.konveyor.io/test: {}
+      f:spec:
+        .: {}
+        f:runStrategy: {}
+        f:template:
+          .: {}
+          f:metadata:
+            .: {}
+            f:labels:
+              .: {}
+              f:app.kubernetes.io/name: {}
+              f:app.kubernetes.io/part-of: {}
+          f:spec:
+            .: {}
+            f:domain:
+              .: {}
+              f:devices:
+                .: {}
+                f:autoattachPodInterface: {}
+                f:disks: {}
+              f:resources:
+                .: {}
+                f:requests:
+                  .: {}
+                  f:memory: {}
+            f:volumes: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2026-10-20T07:37:38Z"
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        .: {}
+        f:conditions: {}
+        f:created: {}
+        f:desiredGeneration: {}
+        f:observedGeneration: {}
+        f:printableStatus: {}
+        f:ready: {}
+        f:runStrategy: {}
+        f:volumeSnapshotStatuses: {}
+    manager: virt-controller
+    operation: Update
+    subresource: status
+    time: "2026-10-20T07:37:38Z"
+  name: configured-vm
+  namespace: crane-kubevirt
+  resourceVersion: "38546"
+  uid: e2fff686-b212-4ad9-9fbe-4c22c9f4a931
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      annotations:
+        kubevirt.io/pci-topology-version: v3
+      labels:
+        app.kubernetes.io/name: configured-vm
+        app.kubernetes.io/part-of: crane-kubevirt-test
+    spec:
+      architecture: amd64
+      domain:
+        devices:
+          autoattachPodInterface: false
+          disks:
+          - disk:
+              bus: virtio
+            name: rootdisk
+          - disk:
+              bus: virtio
+            name: cloudinitdisk
+          - disk:
+              bus: virtio
+            name: datadisk
+        firmware:
+          serial: 63957da3-0f69-4c50-b242-3e4e51e98df5
+          uuid: 25e8ca01-db53-4b07-bf14-f7d305b4428a
+        machine:
+          type: q35
+        resources:
+          requests:
+            memory: 128Mi
+      volumes:
+      - containerDisk:
+          image: quay.io/kubevirt/cirros-container-disk-demo:latest
+        name: rootdisk
+      - cloudInitNoCloud:
+          userData: |
+            #cloud-config
+            hostname: configured-vm
+            write_files:
+            - path: /tmp/crane-kubevirt-test
+              content: migrated-by-crane
+        name: cloudinitdisk
+      - name: datadisk
+        persistentVolumeClaim:
+          claimName: configured-data
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2026-10-20T07:25:48Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: null
+    status: "True"
+    type: LiveMigratable
+  - lastProbeTime: null
+    lastTransitionTime: null
+    status: "True"
+    type: StorageLiveMigratable
+  - lastProbeTime: null
+    lastTransitionTime: "2026-10-20T07:37:38Z"
+    message: a non-live-updatable field was changed in the template spec
+    status: "True"
+    type: RestartRequired
+  created: true
+  desiredGeneration: 3
+  observedGeneration: 2
+  printableStatus: Running
+  ready: true
+  runStrategy: Always
+  volumeSnapshotStatuses:
+  - enabled: false
+    name: rootdisk
+    reason: Snapshot is not supported for this volumeSource type [rootdisk]
+  - enabled: false
+    name: cloudinitdisk
+    reason: Snapshot is not supported for this volumeSource type [cloudinitdisk]
+  - enabled: false
+    name: datadisk
+    reason: 'No VolumeSnapshotClass: Volume snapshots are not configured for this
+      StorageClass [standard] [datadisk]'

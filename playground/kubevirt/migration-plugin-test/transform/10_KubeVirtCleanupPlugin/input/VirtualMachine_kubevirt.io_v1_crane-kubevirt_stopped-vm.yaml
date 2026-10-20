@@ -1,0 +1,125 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kubevirt.io/v1","kind":"VirtualMachine","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"stopped-vm","crane.konveyor.io/test":"kubevirt"},"name":"stopped-vm","namespace":"crane-kubevirt"},"spec":{"runStrategy":"Halted","template":{"metadata":{"labels":{"app.kubernetes.io/name":"stopped-vm"}},"spec":{"domain":{"devices":{"autoattachPodInterface":false,"disks":[{"disk":{"bus":"virtio"},"name":"rootdisk"}]},"resources":{"requests":{"memory":"128Mi"}}},"volumes":[{"containerDisk":{"image":"quay.io/kubevirt/cirros-container-disk-demo:latest"},"name":"rootdisk"}]}}}}
+    kubevirt.io/latest-observed-api-version: v1
+    kubevirt.io/storage-observed-api-version: v1
+  creationTimestamp: "2026-10-20T07:12:31Z"
+  finalizers:
+  - kubevirt.io/virtualMachineControllerFinalize
+  generation: 2
+  labels:
+    app.kubernetes.io/name: stopped-vm
+    crane.konveyor.io/test: kubevirt
+  managedFields:
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:kubevirt.io/latest-observed-api-version: {}
+          f:kubevirt.io/storage-observed-api-version: {}
+        f:finalizers:
+          .: {}
+          v:"kubevirt.io/virtualMachineControllerFinalize": {}
+    manager: virt-controller
+    operation: Update
+    time: "2026-10-20T07:12:31Z"
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        .: {}
+        f:conditions: {}
+        f:printableStatus: {}
+        f:volumeSnapshotStatuses: {}
+    manager: virt-controller
+    operation: Update
+    subresource: status
+    time: "2026-10-20T07:12:31Z"
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/name: {}
+          f:crane.konveyor.io/test: {}
+      f:spec:
+        .: {}
+        f:runStrategy: {}
+        f:template:
+          .: {}
+          f:metadata:
+            .: {}
+            f:labels:
+              .: {}
+              f:app.kubernetes.io/name: {}
+          f:spec:
+            .: {}
+            f:domain:
+              .: {}
+              f:devices:
+                .: {}
+                f:autoattachPodInterface: {}
+                f:disks: {}
+              f:resources:
+                .: {}
+                f:requests:
+                  .: {}
+                  f:memory: {}
+            f:volumes: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2026-10-20T07:23:54Z"
+  name: stopped-vm
+  namespace: crane-kubevirt
+  resourceVersion: "36441"
+  uid: 612c5f75-79d8-4b0d-ba3f-387f40a52a48
+spec:
+  runStrategy: Halted
+  template:
+    metadata:
+      annotations:
+        kubevirt.io/pci-topology-version: v3
+      labels:
+        app.kubernetes.io/name: stopped-vm
+    spec:
+      architecture: amd64
+      domain:
+        devices:
+          autoattachPodInterface: false
+          disks:
+          - disk:
+              bus: virtio
+            name: rootdisk
+        firmware:
+          serial: e1f64a72-eb40-47f6-8da0-30f8d6140542
+          uuid: 7603805b-87dd-4a1b-bf60-581af787b3c7
+        machine:
+          type: q35
+        resources:
+          requests:
+            memory: 128Mi
+      volumes:
+      - containerDisk:
+          image: quay.io/kubevirt/cirros-container-disk-demo:latest
+        name: rootdisk
+status:
+  conditions:
+  - lastProbeTime: "2026-10-20T07:12:31Z"
+    lastTransitionTime: "2026-10-20T07:12:31Z"
+    message: VMI does not exist
+    reason: VMINotExists
+    status: "False"
+    type: Ready
+  printableStatus: Stopped
+  volumeSnapshotStatuses:
+  - enabled: false
+    name: rootdisk
+    reason: Snapshot is not supported for this volumeSource type [rootdisk]

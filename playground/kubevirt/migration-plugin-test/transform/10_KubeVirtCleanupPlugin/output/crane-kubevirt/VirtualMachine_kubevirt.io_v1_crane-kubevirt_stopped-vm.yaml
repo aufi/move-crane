@@ -1,0 +1,40 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kubevirt.io/v1","kind":"VirtualMachine","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"stopped-vm","crane.konveyor.io/test":"kubevirt"},"name":"stopped-vm","namespace":"crane-kubevirt"},"spec":{"runStrategy":"Halted","template":{"metadata":{"labels":{"app.kubernetes.io/name":"stopped-vm"}},"spec":{"domain":{"devices":{"autoattachPodInterface":false,"disks":[{"disk":{"bus":"virtio"},"name":"rootdisk"}]},"resources":{"requests":{"memory":"128Mi"}}},"volumes":[{"containerDisk":{"image":"quay.io/kubevirt/cirros-container-disk-demo:latest"},"name":"rootdisk"}]}}}}
+  labels:
+    app.kubernetes.io/name: stopped-vm
+    crane.konveyor.io/test: kubevirt
+  name: stopped-vm
+  namespace: crane-kubevirt
+spec:
+  runStrategy: Halted
+  template:
+    metadata:
+      annotations:
+        kubevirt.io/pci-topology-version: v3
+      labels:
+        app.kubernetes.io/name: stopped-vm
+    spec:
+      architecture: amd64
+      domain:
+        devices:
+          autoattachPodInterface: false
+          disks:
+          - disk:
+              bus: virtio
+            name: rootdisk
+        firmware:
+          serial: e1f64a72-eb40-47f6-8da0-30f8d6140542
+          uuid: 7603805b-87dd-4a1b-bf60-581af787b3c7
+        machine:
+          type: q35
+        resources:
+          requests:
+            memory: 128Mi
+      volumes:
+      - containerDisk:
+          image: quay.io/kubevirt/cirros-container-disk-demo:latest
+        name: rootdisk

@@ -1,0 +1,141 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kubevirt.io/v1","kind":"VirtualMachine","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"web-vm","crane.konveyor.io/test":"kubevirt"},"name":"web-vm","namespace":"crane-kubevirt"},"spec":{"runStrategy":"Always","template":{"metadata":{"labels":{"app.kubernetes.io/name":"web-vm"}},"spec":{"domain":{"devices":{"autoattachPodInterface":false,"disks":[{"disk":{"bus":"virtio"},"name":"rootdisk"}]},"resources":{"requests":{"memory":"128Mi"}}},"volumes":[{"containerDisk":{"image":"quay.io/kubevirt/cirros-container-disk-demo:latest"},"name":"rootdisk"}]}}}}
+    kubevirt.io/latest-observed-api-version: v1
+    kubevirt.io/storage-observed-api-version: v1
+  creationTimestamp: "2026-10-20T07:12:31Z"
+  finalizers:
+  - kubevirt.io/virtualMachineControllerFinalize
+  generation: 2
+  labels:
+    app.kubernetes.io/name: web-vm
+    crane.konveyor.io/test: kubevirt
+  managedFields:
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:kubevirt.io/latest-observed-api-version: {}
+          f:kubevirt.io/storage-observed-api-version: {}
+        f:finalizers:
+          .: {}
+          v:"kubevirt.io/virtualMachineControllerFinalize": {}
+    manager: virt-controller
+    operation: Update
+    time: "2026-10-20T07:12:31Z"
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/name: {}
+          f:crane.konveyor.io/test: {}
+      f:spec:
+        .: {}
+        f:runStrategy: {}
+        f:template:
+          .: {}
+          f:metadata:
+            .: {}
+            f:labels:
+              .: {}
+              f:app.kubernetes.io/name: {}
+          f:spec:
+            .: {}
+            f:domain:
+              .: {}
+              f:devices:
+                .: {}
+                f:autoattachPodInterface: {}
+                f:disks: {}
+              f:resources:
+                .: {}
+                f:requests:
+                  .: {}
+                  f:memory: {}
+            f:volumes: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2026-10-20T07:23:54Z"
+  - apiVersion: kubevirt.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        .: {}
+        f:conditions: {}
+        f:created: {}
+        f:desiredGeneration: {}
+        f:observedGeneration: {}
+        f:printableStatus: {}
+        f:ready: {}
+        f:runStrategy: {}
+        f:volumeSnapshotStatuses: {}
+    manager: virt-controller
+    operation: Update
+    subresource: status
+    time: "2026-10-20T07:25:51Z"
+  name: web-vm
+  namespace: crane-kubevirt
+  resourceVersion: "36819"
+  uid: f926bbef-f2c5-444a-8559-3951570b3f53
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      annotations:
+        kubevirt.io/pci-topology-version: v3
+      labels:
+        app.kubernetes.io/name: web-vm
+    spec:
+      architecture: amd64
+      domain:
+        devices:
+          autoattachPodInterface: false
+          disks:
+          - disk:
+              bus: virtio
+            name: rootdisk
+        firmware:
+          serial: 8c40ea0a-dccb-4b54-becc-3798ff92b713
+          uuid: 83c5ad7a-1e63-48f3-bfe8-c549772bd944
+        machine:
+          type: q35
+        resources:
+          requests:
+            memory: 128Mi
+      volumes:
+      - containerDisk:
+          image: quay.io/kubevirt/cirros-container-disk-demo:latest
+        name: rootdisk
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2026-10-20T07:25:50Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: null
+    status: "True"
+    type: LiveMigratable
+  - lastProbeTime: null
+    lastTransitionTime: null
+    status: "True"
+    type: StorageLiveMigratable
+  created: true
+  desiredGeneration: 2
+  observedGeneration: 2
+  printableStatus: Running
+  ready: true
+  runStrategy: Always
+  volumeSnapshotStatuses:
+  - enabled: false
+    name: rootdisk
+    reason: Snapshot is not supported for this volumeSource type [rootdisk]

@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patches:
+- path: patches/crane-kubevirt--kubevirt.io-v1--VirtualMachine--configured-vm.patch.yaml
+  target:
+    group: kubevirt.io
+    kind: VirtualMachine
+    name: configured-vm
+    namespace: crane-kubevirt
+    version: v1
+- path: patches/crane-kubevirt--kubevirt.io-v1--VirtualMachine--stopped-vm.patch.yaml
+  target:
+    group: kubevirt.io
+    kind: VirtualMachine
+    name: stopped-vm
+    namespace: crane-kubevirt
+    version: v1
+- path: patches/crane-kubevirt--kubevirt.io-v1--VirtualMachine--web-vm.patch.yaml
+  target:
+    group: kubevirt.io
+    kind: VirtualMachine
+    name: web-vm
+    namespace: crane-kubevirt
+    version: v1
+resources:
+- input/VirtualMachine_kubevirt.io_v1_crane-kubevirt_configured-vm.yaml
+- input/VirtualMachine_kubevirt.io_v1_crane-kubevirt_stopped-vm.yaml
+- input/VirtualMachine_kubevirt.io_v1_crane-kubevirt_web-vm.yaml
+
+# Whiteout resources are written to resources/ for complete snapshot
+# but excluded from active resources list above:
+# - input/PersistentVolumeClaim__v1_crane-kubevirt_configured-data.yaml

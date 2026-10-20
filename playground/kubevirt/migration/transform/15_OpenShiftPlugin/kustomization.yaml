@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- input/VirtualMachine_kubevirt.io_v1_crane-kubevirt_configured-vm.yaml
+- input/VirtualMachine_kubevirt.io_v1_crane-kubevirt_stopped-vm.yaml
+- input/VirtualMachine_kubevirt.io_v1_crane-kubevirt_web-vm.yaml

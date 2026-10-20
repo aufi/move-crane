@@ -1,0 +1,61 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations:
+    kubevirt.io/latest-observed-api-version: v1
+    kubevirt.io/storage-observed-api-version: v1
+  finalizers:
+    - kubevirt.io/virtualMachineControllerFinalize
+  labels:
+    app.kubernetes.io/name: configured-vm
+    app.kubernetes.io/part-of: crane-kubevirt-test
+    crane.konveyor.io/test: kubevirt
+  name: configured-vm
+  namespace: crane-kubevirt
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      annotations:
+        kubevirt.io/pci-topology-version: v3
+      labels:
+        app.kubernetes.io/name: configured-vm
+        app.kubernetes.io/part-of: crane-kubevirt-test
+    spec:
+      architecture: amd64
+      domain:
+        devices:
+          autoattachPodInterface: false
+          disks:
+            - disk:
+                bus: virtio
+              name: rootdisk
+            - disk:
+                bus: virtio
+              name: cloudinitdisk
+            - disk:
+                bus: virtio
+              name: datadisk
+        firmware:
+          serial: 63957da3-0f69-4c50-b242-3e4e51e98df5
+          uuid: 25e8ca01-db53-4b07-bf14-f7d305b4428a
+        machine:
+          type: q35
+        resources:
+          requests:
+            memory: 128Mi
+      volumes:
+        - containerDisk:
+            image: quay.io/kubevirt/cirros-container-disk-demo:latest
+          name: rootdisk
+        - cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              hostname: configured-vm
+              write_files:
+              - path: /tmp/crane-kubevirt-test
+                content: migrated-by-crane
+          name: cloudinitdisk
+        - name: datadisk
+          persistentVolumeClaim:
+            claimName: configured-data

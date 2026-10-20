@@ -1,0 +1,42 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations:
+    kubevirt.io/latest-observed-api-version: v1
+    kubevirt.io/storage-observed-api-version: v1
+  finalizers:
+    - kubevirt.io/virtualMachineControllerFinalize
+  labels:
+    app.kubernetes.io/name: web-vm
+    crane.konveyor.io/test: kubevirt
+  name: web-vm
+  namespace: crane-kubevirt
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      annotations:
+        kubevirt.io/pci-topology-version: v3
+      labels:
+        app.kubernetes.io/name: web-vm
+    spec:
+      architecture: amd64
+      domain:
+        devices:
+          autoattachPodInterface: false
+          disks:
+            - disk:
+                bus: virtio
+              name: rootdisk
+        firmware:
+          serial: 8c40ea0a-dccb-4b54-becc-3798ff92b713
+          uuid: 83c5ad7a-1e63-48f3-bfe8-c549772bd944
+        machine:
+          type: q35
+        resources:
+          requests:
+            memory: 128Mi
+      volumes:
+        - containerDisk:
+            image: quay.io/kubevirt/cirros-container-disk-demo:latest
+          name: rootdisk
