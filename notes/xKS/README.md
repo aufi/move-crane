@@ -42,7 +42,8 @@ The solution must remain CLI-only and file-based:
 | [API_RESOURCE_COMPATIBILITY.md](API_RESOURCE_COMPATIBILITY.md) | Classification of incompatible API kinds, existing application CRDs, and platform dependencies |
 | [OCP_TARGET_VERSIONS.md](OCP_TARGET_VERSIONS.md) | Impact analysis and validation gates for OCP 4 and OCP 5 targets |
 | [TRANSFER_PVC_VALIDATION.md](TRANSFER_PVC_VALIDATION.md) | Network, security, and storage validation matrix for `transfer-pvc` |
-| [AKS.md](AKS.md) | Initial validation and implementation plan for AKS |
+| [AKS.md](AKS.md) | AKS dependency decisions, migration increments, validation backlog, and Crane work packages |
+| [AKS_DISCOVERY.md](AKS_DISCOVERY.md) | Read-only AKS and Azure evidence collection before migration validation |
 | [EKS.md](EKS.md) | Follow-up validation and implementation plan for EKS |
 | [VALIDATION_REPORT_TEMPLATE.md](VALIDATION_REPORT_TEMPLATE.md) | Reproducible report template for a specific platform profile |
 
