@@ -86,6 +86,9 @@ It needs a reachable NGINX ingress endpoint on the target and both Minikube
 contexts in the active kubeconfig. The script stops `configured-vm` first so its
 ReadWriteOnce disk is not copied while attached.
 
+See [VM_STORAGE_SUPPORT_MATRIX.md](VM_STORAGE_SUPPORT_MATRIX.md) for the
+KubeVirt storage source matrix, current Crane coverage, and required work.
+
 ## Inspect and remove
 
 ```bash

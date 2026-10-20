@@ -3,6 +3,9 @@
 Tested on 2026-10-20 with Crane `v0.11.0-alpha.1`, KubeVirt `v1.9.1`, and two
 local Minikube clusters.
 
+The complete storage source and support comparison is in
+[VM_STORAGE_SUPPORT_MATRIX.md](VM_STORAGE_SUPPORT_MATRIX.md).
+
 ## Completed flow
 
 1. `crane export` exported `VirtualMachine` and `PersistentVolumeClaim`.
