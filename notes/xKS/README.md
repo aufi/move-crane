@@ -46,6 +46,8 @@ The solution must remain CLI-only and file-based:
 | [AKS_DISCOVERY.md](AKS_DISCOVERY.md) | Read-only AKS and Azure evidence collection before migration validation |
 | [EKS.md](EKS.md) | Follow-up validation and implementation plan for EKS |
 | [VALIDATION_REPORT_TEMPLATE.md](VALIDATION_REPORT_TEMPLATE.md) | Reproducible report template for a specific platform profile |
+| [todo/](todo/README.md) | Required changes and checks discovered during migration runs |
+| [WordPress AKS to CRC migration](wordpress-aks/migration-2026-10-21/MIGRATION_AKS_TO_CRC.md) | Complete validated procedure using Crane and indirect S3 PVC transfer |
 
 ## Work Order
 
