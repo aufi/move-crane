@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This directory supports discovery, experimental validation, and planning of Crane changes needed to migrate workloads from managed Kubernetes services into OpenShift Container Platform (OCP) 4 or 5. Azure Kubernetes Service (AKS) is the first source platform, followed by Amazon Elastic Kubernetes Service (EKS). The same process should be reusable for other providers.
+This directory supports discovery, experimental validation, and planning of Crane changes needed to migrate workloads from managed Kubernetes services into OpenShift Container Platform (OCP) 4 or 5. Azure Kubernetes Service (AKS) is the first source platform, followed by Amazon Elastic Kubernetes Service (EKS) and selected VMware Tanzu workload-cluster profiles. The same process should be reusable for other providers.
 
 OCP is the fixed target platform, but OCP 4 and OCP 5 are separate target profiles. Upstream Kubernetes on local clusters, such as kind or minikube, provides an optional source-side control baseline without cloud integrations.
 
-This documentation does not claim that every AKS or EKS configuration is supported. Compatibility always applies to a specific combination of:
+This documentation does not claim that every AKS, EKS, or Tanzu configuration is supported. Compatibility always applies to a specific combination of:
 
 - source managed platform and exact target OCP major, minor, and patch version,
 - Kubernetes versions,
@@ -38,6 +38,7 @@ The solution must remain CLI-only and file-based:
 
 | Document | Purpose |
 | --- | --- |
+| [PROVIDER_SUPPORT_WORKFLOW.md](PROVIDER_SUPPORT_WORKFLOW.md) | Delivery workflow for AKS, EKS, and Tanzu support, from infrastructure access through standard E2E, xKS plugin development, and user documentation |
 | [PROVIDER_VALIDATION.md](PROVIDER_VALIDATION.md) | Repeatable process for validating another provider |
 | [API_RESOURCE_COMPATIBILITY.md](API_RESOURCE_COMPATIBILITY.md) | Classification of incompatible API kinds, existing application CRDs, and platform dependencies |
 | [OCP_TARGET_VERSIONS.md](OCP_TARGET_VERSIONS.md) | Impact analysis and validation gates for OCP 4 and OCP 5 targets |
@@ -51,14 +52,16 @@ The solution must remain CLI-only and file-based:
 
 ## Work Order
 
-1. Freeze reference versions of the source managed cluster, exact OCP 4 or OCP 5 target, and optional kind/minikube source baseline.
-2. Run general discovery and build an API difference matrix.
-3. Validate stateless workloads and platform transformations.
-4. Validate dynamic provisioning and StorageClass mapping.
-5. Validate direct `transfer-pvc` through the target endpoint contract, currently an OCP Route.
-6. Validate indirect transfer through object storage for private or disconnected clusters.
-7. Repeat after at least one source provider and target OCP minor-version upgrade; validate OCP 4 and OCP 5 independently.
-8. Derive concrete changes for Crane, plugins, and documentation from the findings.
+Follow [the provider support workflow](PROVIDER_SUPPORT_WORKFLOW.md):
+
+1. Obtain cloud/platform account access and prepare a versioned source and target profile.
+2. Discover APIs, CRDs, networking, storage, and external dependencies.
+3. Run the standard Crane tier0 and tier1 E2E suites and record applicability and failures.
+4. Build provider-specific demonstration and verification applications.
+5. Implement and test manifest rules in [crane-plugin-xks-to-ocp](https://github.com/migtools/crane-plugin-xks-to-ocp), with general fixes in Crane or crane-lib.
+6. Verify complete migrations, including storage mappings, direct and indirect transfer, and application behavior.
+7. Automate regressions and validate source/target upgrades and OCP majors independently.
+8. Publish the tested support matrix and runnable user migration guides.
 
 ## Minimum Support Matrix
 
@@ -70,6 +73,7 @@ Each source provider must be validated against OCP independently:
 | AKS | OCP 5 | Independent validation | Independent validation | Required fallback |
 | EKS | OCP 4 | Independent validation | Independent validation | Required fallback |
 | EKS | OCP 5 | Independent validation | Independent validation | Required fallback |
+| Selected Tanzu product and workload-cluster profile | OCP 4 or 5 | Product and target-major validation | Product and target-major validation | Required fallback |
 | Other managed Kubernetes | OCP 4 or 5 | Provider and target-major validation | Provider and target-major validation | Required fallback |
 | Upstream Kubernetes | OCP 4 or 5 | Optional control test per target major | Optional control test per target major | Optional |
 
