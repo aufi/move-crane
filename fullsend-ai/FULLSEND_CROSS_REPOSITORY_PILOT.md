@@ -125,9 +125,13 @@ Before the first Fullsend run in `crane-lib-pilot`:
    instructions before enabling write-capable agents.
 3. Install Fullsend Apps only for `aufi/crane-lib-pilot`.
 4. Configure the same reviewed Fullsend version, runtime, model, community
-   mint decision, and OpenAI secret policy used by the Crane pilot.
-5. Add a separate `FULLSEND_OPENAI_API_KEY` secret to the library repository;
-   GitHub repository secrets are not shared between repositories.
+   mint decision, and inference policy used by the Crane pilot. The
+   [current plan](FULLSEND_ENMAAS_GLM53_PLAN.md) targets v0.54.0 and EnMaaS
+   GLM-5.3; connection details and the final runtime are pending.
+5. If EnMaaS uses API-key authentication, add a separate
+   `FULLSEND_INFERENCE_GATEWAY_API_KEY` secret to the library repository;
+   GitHub repository secrets are not shared between repositories. If using
+   direct OIDC trust, authorize the library repository separately at the gateway.
 6. Run triage and review validation in the library repository before enabling
    code and fix workflows there.
 7. Confirm that every new branch and pull request targets the pilot repository.

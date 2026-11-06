@@ -23,6 +23,7 @@ Related playground material:
 - [FINDINGS.md](FINDINGS.md)
 - [VM_STORAGE_SUPPORT_MATRIX.md](VM_STORAGE_SUPPORT_MATRIX.md)
 - [kubevirt-cleanup-plugin/](kubevirt-cleanup-plugin/)
+- [GITOPS_ONBOARDING_WITH_MTV.md](GITOPS_ONBOARDING_WITH_MTV.md)
 
 The local test confirmed that generic Crane export discovers
 `kubevirt.io/v1 VirtualMachine` resources. Generic transformation removes most
@@ -267,8 +268,13 @@ upstream Kubernetes.
 
 ## Recommended order
 
-1. Complete tasks 1 through 4 so data transfer cannot falsely report success.
-2. Complete task 5 and basic tests for safe VM manifest import.
-3. Complete tasks 6 through 8 for an auditable stateful cutover.
-4. Complete tasks 9 through 11 for CDI, Block storage, and networking coverage.
-5. Complete task 12 after the CLI workflow is stable.
+For MTV-to-GitOps onboarding, complete task 5 first, then tasks 6, 7, and 11.
+They produce a clean and validated Argo CD bundle from an MTV target namespace
+without transferring storage again.
+
+Tasks 1 through 4 and task 8 remain necessary for a separate Crane-owned
+cross-cluster data migration workflow. They are not prerequisites when MTV has
+already transferred VM disks.
+
+Complete tasks 9, 10, and 12 after the GitOps export and validation path is
+stable.

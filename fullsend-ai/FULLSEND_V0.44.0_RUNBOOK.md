@@ -1,5 +1,13 @@
 # Fullsend v0.44.0 for aufi/crane-fullsend-pilot
 
+## Current upgrade plan
+
+As of November 6, 2026, the planned target is Fullsend `v0.54.0` with GLM-5.3
+through EnMaaS. Follow [the current upgrade plan](FULLSEND_ENMAAS_GLM53_PLAN.md)
+for version, runtime, inference, credentials, and accounting. Connection details
+are pending. The OpenAI/Codex procedure below records the earlier setup and
+must not be used as the EnMaaS installation procedure.
+
 ## Purpose
 
 This runbook describes how to install Fullsend `v0.44.0` in the public
