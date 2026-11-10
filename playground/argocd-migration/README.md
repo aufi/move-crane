@@ -8,6 +8,8 @@ A subsequent [live minikube-to-kind migration](live/README.md) also passed. Four
 
 For the smallest tested custom stage, see the [minimal same-namespace live example](live/same-namespaces/minimal/README.md). It keeps namespaces, Git references, the portable fleet destination, and automated sync unchanged. Only the explicit Application's API URL and its project destination permission need JSON Patch operations.
 
+The [CRC/OpenShift fresh-cluster example](live/crc/README.md) goes further: all destinations are portable, so it passed with zero custom patches. The source VM was deleted, Argo CD was installed on a fresh CRC target, and four Applications and their OpenShift Routes recovered from the host-retained export and Git repository.
+
 ## Files
 
 - [fixtures/source.yaml](fixtures/source.yaml) contains 13 synthetic resources across three namespaces. The test runner splits them into an export-shaped directory.

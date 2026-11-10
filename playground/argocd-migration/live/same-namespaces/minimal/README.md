@@ -33,6 +33,8 @@ There are no custom patches for:
 
 If `explicit-web` and its project rule also used a portable destination on the source, these remaining operations could be omitted as well. That further zero-patch configuration was not the case exercised in this replay.
 
+The later [CRC fresh-cluster test](../../crc/README.md) exercised that portable setup and passed with zero custom patches, including validation through OpenShift Routes after deleting and recreating CRC.
+
 ## Scope and prerequisites
 
 The [same-namespace setup](../README.md) is reused. Argo CD definitions use `crane-gitops-target` on both minikube and kind. Workloads use the same four `*-shared*` namespaces. Both clusters resolve the same Git Service URL and serve the same repository content at revision `main`, path `overlays/source`.

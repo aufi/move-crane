@@ -45,6 +45,8 @@ A [same-namespace replay](../../playground/argocd-migration/live/same-namespaces
 
 The latest [minimal replay](../../playground/argocd-migration/live/same-namespaces/minimal/README.md) made the source fleet and its project rule portable through the local Kubernetes API URL. All four Applications then started automatically with only [two custom operations](../../playground/argocd-migration/live/same-namespaces/minimal/kustomization.yaml): the explicit Application's source API URL and its project permission. The local Application and fleet required no custom spec changes, and their resulting Application specs matched the source.
 
+The [CRC/OpenShift fresh-cluster restore](../../playground/argocd-migration/live/crc/README.md) passed with zero custom patches. After filtered export, the source CRC instance was stopped and deleted; a fresh CRC 4.22.7 target received an independently installed operator/Argo CD instance and target-issued cluster registration. All four Applications synchronized automatically, preserved their source specs, ran under `restricted-v2`, and served matching content through OpenShift Routes. Stable namespaces, host-retained Git, local destinations, and a consistent registration alias made default cleanup sufficient. A selection-only stage excluded the source default project. See [recorded CRC results](../../playground/argocd-migration/live/crc/RESULTS.md).
+
 ## What Crane does today
 
 ### Export

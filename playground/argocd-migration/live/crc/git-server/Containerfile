@@ -1,0 +1,5 @@
+FROM docker.io/alpine/git:2.47.2
+RUN apk add --no-cache git-daemon
+USER 65532:65532
+EXPOSE 9418
+ENTRYPOINT ["git", "-c", "safe.directory=/git/apps.git", "daemon", "--reuseaddr", "--export-all", "--base-path=/git", "--listen=0.0.0.0", "--port=9418"]

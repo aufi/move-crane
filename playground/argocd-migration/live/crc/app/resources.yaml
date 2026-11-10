@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-content
+data:
+  index.html: |
+    crane-crc-gitops restored-shared-content
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-web
+  template:
+    metadata:
+      labels:
+        app: sample-web
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: docker.io/library/busybox:1.36.1
+          command: [httpd, -f, -p, "8080", -h, /www]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: web
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: web
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: content
+              mountPath: /www
+              readOnly: true
+      volumes:
+        - name: content
+          configMap:
+            name: web-content
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-web
+spec:
+  selector:
+    app: sample-web
+  ports:
+    - name: web
+      port: 8080
+      targetPort: web
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: sample-web
+spec:
+  to:
+    kind: Service
+    name: sample-web
+  port:
+    targetPort: web

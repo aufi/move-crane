@@ -8,6 +8,8 @@ A second [filtered migration into the existing instance](FILTERED_RESULTS.md) al
 
 The [same-namespace example](same-namespaces/README.md) also passed. Definition/workload namespaces and all Git references are identical on both clusters. Its initial static stage applied four destination-related operations. The latest [minimal replay](same-namespaces/minimal/README.md) passed with just [two operations](same-namespaces/minimal/kustomization.yaml), because the fleet already uses a portable local destination. The current target Applications deploy into `*-shared*` namespaces with automated sync enabled.
 
+A separate [CRC/OpenShift fresh-cluster restore](crc/README.md) also passed. It used one CRC instance at a time, deleted the source VM after export, installed Argo CD on the fresh target, and restored four healthy Applications and working Routes with zero custom patches. Git and evidence remained on the host throughout the reset. See [CRC results](crc/RESULTS.md).
+
 ## Running environment
 
 | Component | Source | Target |
