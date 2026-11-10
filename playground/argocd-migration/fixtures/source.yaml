@@ -1,0 +1,287 @@
+# Synthetic export content. All credentials, URLs, certificates, and UIDs are fake.
+# Never deploy this fixture or the generated target bundle to a real cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: ArgoCD
+metadata:
+  name: platform
+  namespace: gitops-source
+  uid: 00000000-0000-0000-0000-000000000001
+  resourceVersion: "123"
+spec:
+  sourceNamespaces:
+    - team-apps-source
+  server:
+    route:
+      enabled: true
+      host: argocd.source.example.test
+  rbac:
+    defaultPolicy: role:readonly
+status:
+  phase: Available
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: payments
+  namespace: gitops-source
+spec:
+  sourceRepos:
+    - https://git.example.test/platform/apps.git
+    - https://charts.example.test
+  sourceNamespaces:
+    - team-apps-source
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: payments-source
+    - server: https://api.source.example.test:6443
+      namespace: payments-source
+  roles:
+    - name: deployer
+      groups: [payments-team]
+      policies:
+        - p, proj:payments:deployer, applications, sync, payments/team-apps-source/*, allow
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-app
+  namespace: gitops-source
+  uid: 00000000-0000-0000-0000-000000000002
+  resourceVersion: "124"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    argocd.argoproj.io/instance: bootstrap
+    team: payments
+  annotations:
+    argocd.argoproj.io/tracking-id: bootstrap:argoproj.io/Application:gitops-source/local-app
+spec:
+  project: payments
+  source:
+    repoURL: https://git.example.test/platform/apps.git
+    targetRevision: main
+    path: payments/overlays/source
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: payments-source
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+operation:
+  initiatedBy:
+    username: admin
+  sync:
+    revision: source-in-flight-revision
+status:
+  sync:
+    status: Synced
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: explicit-app
+  namespace: gitops-source
+spec:
+  project: payments
+  source:
+    repoURL: https://git.example.test/platform/apps.git
+    targetRevision: main
+    path: payments/overlays/source
+  destination:
+    server: https://api.source.example.test:6443
+    namespace: payments-source
+  syncPolicy:
+    automated: {}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: named-multi-app
+  namespace: team-apps-source
+spec:
+  project: payments
+  sources:
+    - repoURL: https://charts.example.test
+      chart: payments
+      targetRevision: 1.2.3
+      helm:
+        valueFiles:
+          - $values/environments/source/values.yaml
+    - repoURL: https://git.example.test/platform/apps.git
+      targetRevision: main
+      ref: values
+  destination:
+    name: source-workloads
+    namespace: payments-source
+  syncPolicy:
+    automated:
+      prune: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: fleet
+  namespace: gitops-source
+  uid: 00000000-0000-0000-0000-000000000003
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: source-workloads
+            namespace: payments-source
+      template:
+        metadata: {}
+        spec:
+          destination:
+            name: source-workloads
+            namespace: payments-source
+          syncPolicy:
+            automated:
+              prune: true
+  template:
+    metadata:
+      name: "fleet-{{cluster}}"
+    spec:
+      project: payments
+      source:
+        repoURL: https://git.example.test/platform/apps.git
+        targetRevision: main
+        path: payments/overlays/source
+      destination:
+        name: "{{cluster}}"
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: git-fleet
+  namespace: gitops-source
+spec:
+  generators:
+    - git:
+        repoURL: https://git.example.test/platform/apps.git
+        revision: main
+        directories:
+          - path: clusters/source/*
+  template:
+    metadata:
+      name: "git-{{path.basename}}"
+    spec:
+      project: payments
+      source:
+        repoURL: https://git.example.test/platform/apps.git
+        targetRevision: main
+        path: "{{path}}"
+      destination:
+        server: https://api.source.example.test:6443
+        namespace: payments-source
+      syncPolicy:
+        automated: {}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fleet-source-workloads
+  namespace: gitops-source
+  ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      kind: ApplicationSet
+      name: fleet
+      uid: 00000000-0000-0000-0000-000000000003
+      controller: true
+spec:
+  project: payments
+  source:
+    repoURL: https://git.example.test/platform/apps.git
+    targetRevision: main
+    path: payments/overlays/source
+  destination:
+    name: source-workloads
+    namespace: payments-source
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: private-repo
+  namespace: gitops-source
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+data:
+  url: aHR0cHM6Ly9naXQuZXhhbXBsZS50ZXN0L3BsYXRmb3JtL2FwcHMuZ2l0
+  username: Z2l0
+  password: Zml4dHVyZS1vbmx5
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: registered-workloads
+  namespace: gitops-source
+  labels:
+    argocd.argoproj.io/secret-type: cluster
+    environment: source
+type: Opaque
+data:
+  name: c291cmNlLXdvcmtsb2Fkcw==
+  server: aHR0cHM6Ly9hcGkuc291cmNlLmV4YW1wbGUudGVzdDo2NDQz
+  namespaces: cGF5bWVudHMtc291cmNl
+  config: eyJiZWFyZXJUb2tlbiI6InNvdXJjZS1maXh0dXJlLXRva2VuLW5vdC1yZWFsIiwidGxzQ2xpZW50Q29uZmlnIjp7Imluc2VjdXJlIjpmYWxzZSwiY2FEYXRhIjoiYzI5MWNtTmxMV1pwZUhSMWNtVXRZMkV0Ym05MExYSmxZV3c9In19
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: gitops-source
+  ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      kind: ArgoCD
+      name: platform
+      uid: 00000000-0000-0000-0000-000000000001
+data:
+  policy.csv: |
+    g, payments-team, role:readonly
+  scopes: '[groups]'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-server
+  namespace: gitops-source
+  ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      kind: ArgoCD
+      name: platform
+      uid: 00000000-0000-0000-0000-000000000001
+spec:
+  selector:
+    matchLabels:
+      app: platform-server
+  template:
+    metadata:
+      labels:
+        app: platform-server
+    spec:
+      containers:
+        - name: server
+          image: quay.io/argoproj/argocd:fixture-only
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitops-access
+  namespace: payments-source
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: ServiceAccount
+    name: platform-argocd-application-controller
+    namespace: gitops-source
+  - kind: ServiceAccount
+    name: observer
+    namespace: shared-security

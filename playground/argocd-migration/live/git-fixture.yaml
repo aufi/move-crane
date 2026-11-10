@@ -1,0 +1,143 @@
+# Apply into crane-git-source or crane-git-target. This is a disposable public repo.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: git-content
+data:
+  base.yaml: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: sample-web
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: sample-web
+      template:
+        metadata:
+          labels:
+            app: sample-web
+        spec:
+          containers:
+            - name: web
+              image: docker.io/library/busybox:1.36.1
+              command: [httpd, -f, -p, "8080", -h, /www]
+              ports:
+                - containerPort: 8080
+              readinessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+              volumeMounts:
+                - name: content
+                  mountPath: /www
+          volumes:
+            - name: content
+              configMap:
+                name: web-content
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: sample-web
+    spec:
+      selector:
+        app: sample-web
+      ports:
+        - port: 8080
+          targetPort: 8080
+  source-kustomization.yaml: |
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources: [../../base]
+    configMapGenerator:
+      - name: web-content
+        files: [index.html]
+    generatorOptions:
+      disableNameSuffixHash: true
+  target-kustomization.yaml: |
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources: [../../base]
+    configMapGenerator:
+      - name: web-content
+        files: [index.html]
+    generatorOptions:
+      disableNameSuffixHash: true
+  source-index.html: |
+    crane-argocd-live-test environment=source cluster=minikube
+  target-index.html: |
+    crane-argocd-live-test environment=target cluster=kind
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: git-fixture
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: git-fixture
+  template:
+    metadata:
+      labels:
+        app: git-fixture
+    spec:
+      initContainers:
+        - name: create-repository
+          image: docker.io/alpine/git:2.47.2
+          command: [sh, -ec]
+          args:
+            - |
+              mkdir -p /work/base /work/overlays/source /work/overlays/target
+              cp /fixtures/base.yaml /work/base/resources.yaml
+              printf 'resources: [resources.yaml]\n' > /work/base/kustomization.yaml
+              cp /fixtures/source-kustomization.yaml /work/overlays/source/kustomization.yaml
+              cp /fixtures/target-kustomization.yaml /work/overlays/target/kustomization.yaml
+              cp /fixtures/source-index.html /work/overlays/source/index.html
+              cp /fixtures/target-index.html /work/overlays/target/index.html
+              git -C /work init -b main
+              git -C /work config user.email crane-test@example.test
+              git -C /work config user.name Crane-test
+              git -C /work add .
+              GIT_AUTHOR_DATE=2026-11-10T12:00:00Z GIT_COMMITTER_DATE=2026-11-10T12:00:00Z git -C /work commit -m 'Add source and target test overlays'
+              git clone --bare /work /data/apps.git
+              git --git-dir=/data/apps.git update-server-info
+              chmod -R a+rX /data
+          volumeMounts:
+            - name: fixtures
+              mountPath: /fixtures
+            - name: repository
+              mountPath: /data
+      containers:
+        - name: git
+          image: docker.io/alpine/git:2.47.2
+          command: [sh, -ec]
+          args:
+            - apk add --no-cache git-daemon && exec git daemon --reuseaddr --base-path=/data --export-all --listen=0.0.0.0 --port=9418
+          ports:
+            - containerPort: 9418
+          readinessProbe:
+            tcpSocket:
+              port: 9418
+          volumeMounts:
+            - name: repository
+              mountPath: /data
+      volumes:
+        - name: fixtures
+          configMap:
+            name: git-content
+        - name: repository
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: git-fixture
+spec:
+  selector:
+    app: git-fixture
+  ports:
+    - port: 9418
+      targetPort: 9418

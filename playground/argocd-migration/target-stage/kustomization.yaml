@@ -1,0 +1,191 @@
+# Copied to transform/50_ArgoTarget/ after the KubernetesPlugin stage.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../10_KubernetesPlugin
+  - namespaces.yaml
+patches:
+  # Explicit namespace maps preserve resources in multiple namespaces.
+  - target:
+      namespace: gitops-source
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: gitops-target
+  - target:
+      namespace: payments-source
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: payments-target
+  - target:
+      namespace: team-apps-source
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: team-apps-target
+  - target:
+      group: argoproj.io
+      kind: ArgoCD
+      name: platform
+    patch: |-
+      - op: replace
+        path: /spec/sourceNamespaces/0
+        value: team-apps-target
+      - op: replace
+        path: /spec/server/route/host
+        value: argocd.target.example.test
+      # Recover user-maintained RBAC from the owned ConfigMap via the CR.
+      - op: add
+        path: /spec/rbac/policy
+        value: |
+          g, payments-team, role:readonly
+      - op: add
+        path: /spec/rbac/scopes
+        value: '[groups]'
+  - target:
+      group: argoproj.io
+      kind: AppProject
+      name: payments
+    patch: |-
+      - op: replace
+        path: /spec/sourceNamespaces/0
+        value: team-apps-target
+      - op: replace
+        path: /spec/destinations
+        value:
+          - server: https://kubernetes.default.svc
+            namespace: payments-target
+          - server: https://api.target.example.test:6443
+            namespace: payments-target
+      - op: replace
+        path: /spec/roles/0/policies/0
+        value: p, proj:payments:deployer, applications, sync, payments/team-apps-target/*, allow
+  - target:
+      group: argoproj.io
+      kind: Application
+    patch: |-
+      - op: replace
+        path: /spec/destination/namespace
+        value: payments-target
+      # All surviving standalone Applications in this fixture have this field.
+      - op: remove
+        path: /spec/syncPolicy/automated
+  - target:
+      group: argoproj.io
+      kind: Application
+      name: local-app
+    patch: |-
+      - op: remove
+        path: /operation
+      # The source bootstrap Application will not own this standalone target app.
+      - op: remove
+        path: /metadata/annotations/argocd.argoproj.io~1tracking-id
+      - op: remove
+        path: /metadata/labels/argocd.argoproj.io~1instance
+  - target:
+      group: argoproj.io
+      kind: Application
+      name: (local-app|explicit-app)
+    patch: |-
+      - op: replace
+        path: /spec/source/path
+        value: payments/overlays/target
+      - op: replace
+        path: /spec/source/targetRevision
+        value: migration-target
+  - target:
+      group: argoproj.io
+      kind: Application
+      name: explicit-app
+    patch: |-
+      - op: replace
+        path: /spec/destination/server
+        value: https://api.target.example.test:6443
+  - target:
+      group: argoproj.io
+      kind: Application
+      name: named-multi-app
+    patch: |-
+      - op: replace
+        path: /spec/destination/name
+        value: target-workloads
+      - op: replace
+        path: /spec/sources/0/helm/valueFiles/0
+        value: $values/environments/target/values.yaml
+      - op: replace
+        path: /spec/sources/1/targetRevision
+        value: migration-target
+  - target:
+      group: argoproj.io
+      kind: ApplicationSet
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/syncPolicy/automated
+      - op: replace
+        path: /spec/template/spec/source/targetRevision
+        value: migration-target
+  - target:
+      group: argoproj.io
+      kind: ApplicationSet
+      name: fleet
+    patch: |-
+      - op: replace
+        path: /spec/generators/0/list/elements/0/cluster
+        value: target-workloads
+      - op: replace
+        path: /spec/generators/0/list/elements/0/namespace
+        value: payments-target
+      - op: replace
+        path: /spec/generators/0/template/spec/destination/name
+        value: target-workloads
+      - op: replace
+        path: /spec/generators/0/template/spec/destination/namespace
+        value: payments-target
+      - op: remove
+        path: /spec/generators/0/template/spec/syncPolicy/automated
+      - op: replace
+        path: /spec/template/spec/source/path
+        value: payments/overlays/target
+  - target:
+      group: argoproj.io
+      kind: ApplicationSet
+      name: git-fleet
+    patch: |-
+      - op: replace
+        path: /spec/generators/0/git/revision
+        value: migration-target
+      - op: replace
+        path: /spec/generators/0/git/directories/0/path
+        value: clusters/target/*
+      - op: replace
+        path: /spec/template/spec/destination/server
+        value: https://api.target.example.test:6443
+      - op: replace
+        path: /spec/template/spec/destination/namespace
+        value: payments-target
+  - target:
+      kind: Secret
+      name: registered-workloads
+    patch: |-
+      # Replace the complete credential payload. Never retain the source token/CA.
+      - op: remove
+        path: /data
+      - op: add
+        path: /stringData
+        value:
+          name: target-workloads
+          server: https://api.target.example.test:6443
+          namespaces: payments-target
+          config: '{"bearerToken":"target-fixture-token-not-real","tlsClientConfig":{"insecure":false,"caData":"dGFyZ2V0LWZpeHR1cmUtY2Etbm90LXJlYWw="}}'
+      - op: replace
+        path: /metadata/labels/environment
+        value: target
+  - target:
+      group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: gitops-access
+    patch: |-
+      - op: replace
+        path: /subjects/0/namespace
+        value: gitops-target

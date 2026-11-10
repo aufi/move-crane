@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crane-gitops-source
+---
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: crane
+  namespace: crane-gitops-source
+spec:
+  applicationSet:
+    enabled: true
+  rbac:
+    defaultPolicy: role:readonly
+    policy: |
+      g, crane-testers, role:admin
+  server:
+    insecure: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: crane-sample
+  namespace: crane-gitops-source
+spec:
+  sourceRepos:
+    - git://git-fixture.crane-git-source.svc.cluster.local:9418/apps.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: crane-payments-source
+    - server: SOURCE_API_URL
+      namespace: crane-ledger-source
+    - server: SOURCE_API_URL
+      namespace: crane-fleet-source-*
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-web
+  namespace: crane-gitops-source
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: crane-sample
+  source:
+    repoURL: git://git-fixture.crane-git-source.svc.cluster.local:9418/apps.git
+    targetRevision: main
+    path: overlays/source
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crane-payments-source
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: explicit-web
+  namespace: crane-gitops-source
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: crane-sample
+  source:
+    repoURL: git://git-fixture.crane-git-source.svc.cluster.local:9418/apps.git
+    targetRevision: main
+    path: overlays/source
+  destination:
+    server: SOURCE_API_URL
+    namespace: crane-ledger-source
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: fleet
+  namespace: crane-gitops-source
+spec:
+  generators:
+    - list:
+        elements:
+          - name: blue
+            namespace: crane-fleet-source-blue
+          - name: green
+            namespace: crane-fleet-source-green
+  template:
+    metadata:
+      name: "fleet-{{name}}"
+    spec:
+      project: crane-sample
+      source:
+        repoURL: git://git-fixture.crane-git-source.svc.cluster.local:9418/apps.git
+        targetRevision: main
+        path: overlays/source
+      destination:
+        name: minikube-workloads
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
