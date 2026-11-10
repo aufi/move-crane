@@ -2,8 +2,9 @@
 
 ## Current upgrade plan
 
-As of November 6, 2026, the planned target is Fullsend `v0.54.0` with GLM-5.3
-through EnMaaS. Follow [the current upgrade plan](FULLSEND_ENMAAS_GLM53_PLAN.md)
+As of November 10, 2026, the planned target is Fullsend `v0.54.0` with
+DeepSeek-V4.1-Flash-1017 through EnMaaS. Follow
+[the current upgrade plan](FULLSEND_ENMAAS_PLAN.md)
 for version, runtime, inference, credentials, and accounting. Connection details
 are pending. The OpenAI/Codex procedure below records the earlier setup and
 must not be used as the EnMaaS installation procedure.

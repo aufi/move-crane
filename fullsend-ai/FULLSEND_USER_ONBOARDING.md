@@ -21,9 +21,10 @@ protection.
 | Fix | Pull request | Updates a Fullsend code-agent pull request in response to a specific request. |
 
 The earlier setup used the experimental Codex runtime. The
-[current upgrade plan](FULLSEND_ENMAAS_GLM53_PLAN.md) targets Fullsend v0.54.0
-and GLM-5.3 through EnMaaS, with the runtime to be confirmed after connection
-details are supplied. This is a planned migration, not a verified deployment.
+[current upgrade plan](FULLSEND_ENMAAS_PLAN.md) targets Fullsend v0.54.0
+and DeepSeek-V4.1-Flash-1017 through EnMaaS, with the runtime to be confirmed
+after connection details are supplied. This is a planned migration, not a
+verified deployment.
 Treat every output as a proposal that requires normal human review.
 
 ## Before You Start

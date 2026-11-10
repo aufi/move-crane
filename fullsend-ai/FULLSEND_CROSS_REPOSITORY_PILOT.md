@@ -126,8 +126,8 @@ Before the first Fullsend run in `crane-lib-pilot`:
 3. Install Fullsend Apps only for `aufi/crane-lib-pilot`.
 4. Configure the same reviewed Fullsend version, runtime, model, community
    mint decision, and inference policy used by the Crane pilot. The
-   [current plan](FULLSEND_ENMAAS_GLM53_PLAN.md) targets v0.54.0 and EnMaaS
-   GLM-5.3; connection details and the final runtime are pending.
+   [current plan](FULLSEND_ENMAAS_PLAN.md) targets v0.54.0 and EnMaaS
+   DeepSeek-V4.1-Flash-1017; connection details and the final runtime are pending.
 5. If EnMaaS uses API-key authentication, add a separate
    `FULLSEND_INFERENCE_GATEWAY_API_KEY` secret to the library repository;
    GitHub repository secrets are not shared between repositories. If using
