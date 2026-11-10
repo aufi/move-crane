@@ -39,6 +39,8 @@ The live run exported 88 resources, retained 18 after generic cleanup, and migra
 
 One observed limit matters for the migration recipe. The manually installed operator's four CRDs and six cluster RBAC resources survived the generic baseline. The experiment explicitly excluded them and let the target operator supply those resources.
 
+A [second live migration](../../playground/argocd-migration/live/FILTERED_RESULTS.md) reused the already-running target instance after resetting only the demo application definitions. Exporting just Applications, ApplicationSets, and AppProjects with `--include-gk` and skipping related CRDs produced seven source objects, five after generic cleanup, and four after excluding the source default project. All four Applications synchronized successfully without migrating an `ArgoCD` CR or Secrets. The existing instance configuration, default project, credential Secret identities, and control-plane Deployment identities were preserved.
+
 ## What Crane does today
 
 ### Export
@@ -56,13 +58,14 @@ For an operator-managed Argo CD migration, use `--include-gk` to export the desi
 
 ```bash
 crane export --context source -n argocd \
-  --include-gk argoproj.io/ArgoCD \
   --include-gk argoproj.io/Application \
   --include-gk argoproj.io/ApplicationSet \
   --include-gk argoproj.io/AppProject \
   --crd-skip-group argoproj.io \
   --export-dir export-argocd
 ```
+
+This example reuses an already-configured target instance. Add `--include-gk argoproj.io/ArgoCD` only when you also intend to recreate or migrate the instance configuration. Installing an operator alone does not necessarily create an instance; some distributions create a default one separately.
 
 Use `--crd-skip-group argoproj.io` when the preinstalled target operator supplies the Argo CD CRDs. Related CRD collection is separate from the `--include-gk` filter. Kind filtering selects all objects of each listed kind, so review which projects and Applications belong in the migration, including any exported `default` project.
 

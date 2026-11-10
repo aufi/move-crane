@@ -4,6 +4,8 @@ The live test passed on 2026-11-10. Four Applications became `Synced` and `Healt
 
 See [RESULTS.md](RESULTS.md) for the observed transformations and limitations.
 
+A second [filtered migration into the existing instance](FILTERED_RESULTS.md) also passed. It reset the previous demo definitions, reused the running target Argo CD and its connections, and exported only Applications, ApplicationSets, and AppProjects. The current Applications deploy into the `*-filtered*` namespaces documented in that report. [run_filtered.py](run_filtered.py) reproduces the follow-up.
+
 ## Running environment
 
 | Component | Source | Target |
