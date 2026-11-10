@@ -6,6 +6,8 @@ This experiment runs the real Crane CLI against synthetic exported manifests and
 
 A subsequent [live minikube-to-kind migration](live/README.md) also passed. Four target Applications synchronized and served target-specific HTTP content; source workload identities and responses remained unchanged. See [the live results](live/RESULTS.md).
 
+For the smallest tested custom stage, see the [minimal same-namespace live example](live/same-namespaces/minimal/README.md). It keeps namespaces, Git references, the portable fleet destination, and automated sync unchanged. Only the explicit Application's API URL and its project destination permission need JSON Patch operations.
+
 ## Files
 
 - [fixtures/source.yaml](fixtures/source.yaml) contains 13 synthetic resources across three namespaces. The test runner splits them into an export-shaped directory.

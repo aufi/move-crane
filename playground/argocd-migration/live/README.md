@@ -4,7 +4,9 @@ The live test passed on 2026-11-10. Four Applications became `Synced` and `Healt
 
 See [RESULTS.md](RESULTS.md) for the observed transformations and limitations.
 
-A second [filtered migration into the existing instance](FILTERED_RESULTS.md) also passed. It reset the previous demo definitions, reused the running target Argo CD and its connections, and exported only Applications, ApplicationSets, and AppProjects. The current Applications deploy into the `*-filtered*` namespaces documented in that report. [run_filtered.py](run_filtered.py) reproduces the follow-up.
+A second [filtered migration into the existing instance](FILTERED_RESULTS.md) also passed. It reset the previous demo definitions, reused the running target Argo CD and its connections, and exported only Applications, ApplicationSets, and AppProjects. That replay deployed into the `*-filtered*` namespaces. [run_filtered.py](run_filtered.py) reproduces it.
+
+The [same-namespace example](same-namespaces/README.md) also passed. Definition/workload namespaces and all Git references are identical on both clusters. Its initial static stage applied four destination-related operations. The latest [minimal replay](same-namespaces/minimal/README.md) passed with just [two operations](same-namespaces/minimal/kustomization.yaml), because the fleet already uses a portable local destination. The current target Applications deploy into `*-shared*` namespaces with automated sync enabled.
 
 ## Running environment
 

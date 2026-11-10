@@ -41,6 +41,10 @@ One observed limit matters for the migration recipe. The manually installed oper
 
 A [second live migration](../../playground/argocd-migration/live/FILTERED_RESULTS.md) reused the already-running target instance after resetting only the demo application definitions. Exporting just Applications, ApplicationSets, and AppProjects with `--include-gk` and skipping related CRDs produced seven source objects, five after generic cleanup, and four after excluding the source default project. All four Applications synchronized successfully without migrating an `ArgoCD` CR or Secrets. The existing instance configuration, default project, credential Secret identities, and control-plane Deployment identities were preserved.
 
+A [same-namespace replay](../../playground/argocd-migration/live/same-namespaces/README.md) then kept definition/workload namespaces, Git URL/revision/path, and automated sync identical on both clusters. All four Applications synchronized with exactly four custom operations: one explicit API URL, one registered destination name, and two corresponding project destination URLs. The local-destination Application required no custom spec changes. The [tested static Kustomization](../../playground/argocd-migration/live/same-namespaces/kustomization.yaml) shows those operations without namespace, repository, or sync-policy patches.
+
+The latest [minimal replay](../../playground/argocd-migration/live/same-namespaces/minimal/README.md) made the source fleet and its project rule portable through the local Kubernetes API URL. All four Applications then started automatically with only [two custom operations](../../playground/argocd-migration/live/same-namespaces/minimal/kustomization.yaml): the explicit Application's source API URL and its project permission. The local Application and fleet required no custom spec changes, and their resulting Application specs matched the source.
+
 ## What Crane does today
 
 ### Export
