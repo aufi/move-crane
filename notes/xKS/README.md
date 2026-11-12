@@ -46,6 +46,8 @@ The solution must remain CLI-only and file-based:
 | [AKS.md](AKS.md) | AKS dependency decisions, migration increments, validation backlog, and Crane work packages |
 | [AKS_DISCOVERY.md](AKS_DISCOVERY.md) | Read-only AKS and Azure evidence collection before migration validation |
 | [EKS.md](EKS.md) | Follow-up validation and implementation plan for EKS |
+| [TANZU_VCF.md](TANZU_VCF.md) | TKG, VKS, and VCF distinctions, selected workload-cluster profiles, and validation scope for migration to OCP 4 or 5 |
+| [TANZU_ADOPTION.md](TANZU_ADOPTION.md) | Public Tanzu usage evidence, limits of distribution statistics, and development priorities based on migration demand |
 | [VALIDATION_REPORT_TEMPLATE.md](VALIDATION_REPORT_TEMPLATE.md) | Reproducible report template for a specific platform profile |
 | [todo/](todo/README.md) | Required changes and checks discovered during migration runs |
 | [WordPress AKS to CRC migration](wordpress-aks/migration-2026-10-21/MIGRATION_AKS_TO_CRC.md) | Complete validated procedure using Crane and indirect S3 PVC transfer |
