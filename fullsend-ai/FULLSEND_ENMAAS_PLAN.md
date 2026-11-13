@@ -1,5 +1,18 @@
 # Fullsend v0.54.0 and EnMaaS DeepSeek pilot plan
 
+Deployment and validation are now recorded in the
+[November 13 deployment record](FULLSEND_ENMAAS_DEPLOYMENT_2026-11-13.md).
+The v0.55.0 configuration PR is merged, and triage, review, code, and fix have
+passed live GitHub Actions verification with EnMaaS/DeepSeek. See the
+[agent validation record](FULLSEND_ENMAAS_AGENT_VALIDATION_2026-11-13.md) for
+review delegation and the code/fix PR lifecycle. The pending connection details
+below describe the original November 10 plan; use the deployment and validation
+records for current values and remaining live-cluster E2E work.
+
+For the subsequent v0.55.0 release, required tracker migration, and confirmed
+review-persona routing rules, see the
+[November 13 update review](FULLSEND_UPDATES_2026-11-13.md).
+
 ## Status and scope
 
 Updated on November 10, 2026. The selected inference service is EnMaaS and the
@@ -192,6 +205,11 @@ EnMaaS accounting to check consumption rather than interpreting zero reported
 usage as a free run.
 
 ## Cross-repository follow-up
+
+The initial development use case is E2E test implementation. Follow the
+[E2E implementation assignment](FULLSEND_E2E_IMPLEMENTATION_ASSIGNMENT.md)
+for the agreed progression through PR CI, runner-local minikube validation,
+and internal OpenShift or CRC execution.
 
 The [Crane/library experiment](FULLSEND_CROSS_REPOSITORY_PILOT.md) uses the same
 Fullsend version and confirmed EnMaaS/DeepSeek settings when the library pilot is

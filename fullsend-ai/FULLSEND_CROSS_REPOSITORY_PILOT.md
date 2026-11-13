@@ -60,6 +60,10 @@ Crane dependency, and validate the combined result.
 
 ## Cross-Repository Issue Creation
 
+The configuration below records the earlier pilot schema. Fullsend v0.55.0
+rejects `create_issues`; migrate it to `tracker.github.allowed_targets` before
+upgrading, as described in the [November 13 update review](FULLSEND_UPDATES_2026-11-13.md).
+
 The current Crane pilot configuration permits issue creation only in these
 repositories:
 
