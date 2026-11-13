@@ -18,6 +18,14 @@ manual with automatic code promotion off; retro and prioritize remain disabled.
 Review, code, and fix use the fleet triggers, including automatic PR review and
 eligible review-triggered fixes.
 
+After these lifecycle checks, [PR #23](https://github.com/aufi/crane-fullsend-pilot/pull/23)
+raised the review finding threshold to `medium` in both runner and sandbox
+environments. It passed Fullsend lint and required CI and was merged as
+`7977fbb01054a43733b3956519b733675f14a93b`. The registered local review harness
+and both threshold values were verified on `main`. The persona roster and
+model overrides were preserved. The run measurements below predate this
+reporting-threshold change.
+
 ## Review verification
 
 - Subject: [PR #15](https://github.com/aufi/crane-fullsend-pilot/pull/15), a small
