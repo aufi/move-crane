@@ -2,3 +2,5 @@
 ./crane/
 ./crane-*/
 .env
+/test-day-june2026
+/test-day-august2026

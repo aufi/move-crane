@@ -1,5 +1,11 @@
 # Fullsend v0.54.0 and EnMaaS DeepSeek pilot plan
 
+As of November 18, the EnMaaS token must not be used on GitHub. The API-key
+recommendation below is superseded by the
+[Claude WIF options and migration outline](FULLSEND_CLAUDE_WIF_OPTIONS_2026-11-18.md).
+That research recommends repo-scoped GCP WIF for Claude on Vertex; migration
+has not yet been performed.
+
 Deployment and validation are now recorded in the
 [November 13 deployment record](FULLSEND_ENMAAS_DEPLOYMENT_2026-11-13.md).
 The v0.55.0 configuration PR is merged, and triage, review, code, and fix have
