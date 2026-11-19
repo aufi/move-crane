@@ -1,5 +1,7 @@
 # Amazon Elastic Kubernetes Service Support Plan
 
+The first live source-cluster inventory is recorded in [EKS discovery](EKS_DISCOVERY.md). A [WordPress sample](wordpress-eks/README.md) was deployed and validated on 2026-11-18 with two EBS gp3 PVCs.
+
 ## Second-Phase Goal
 
 After stabilizing the process on AKS, validate migrations from EKS into OCP 4 or OCP 5. EKS validation must prove that the resulting solution is capability-based and not implicitly tied to Azure. Each OCP major and minor is a separate target profile.

@@ -46,6 +46,8 @@ The solution must remain CLI-only and file-based:
 | [AKS.md](AKS.md) | AKS dependency decisions, migration increments, validation backlog, and Crane work packages |
 | [AKS_DISCOVERY.md](AKS_DISCOVERY.md) | Read-only AKS and Azure evidence collection before migration validation |
 | [EKS.md](EKS.md) | Follow-up validation and implementation plan for EKS |
+| [EKS_DISCOVERY.md](EKS_DISCOVERY.md) | Live EKS API, node, networking, and storage inventory from 2026-11-18 |
+| [WordPress on EKS](wordpress-eks/README.md) | Tested sample deployment with EBS gp3 PVCs and local HTTP access |
 | [TANZU_VCF.md](TANZU_VCF.md) | TKG, VKS, and VCF distinctions, selected workload-cluster profiles, and validation scope for migration to OCP 4 or 5 |
 | [TANZU_ADOPTION.md](TANZU_ADOPTION.md) | Public Tanzu usage evidence, limits of distribution statistics, and development priorities based on migration demand |
 | [VALIDATION_REPORT_TEMPLATE.md](VALIDATION_REPORT_TEMPLATE.md) | Reproducible report template for a specific platform profile |

@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: wordpress-eks
+resources:
+  - namespace.yaml
+  - ../../../test-day-june2026/sample-apps/wordpress
+patches:
+  - target:
+      version: v1
+      kind: Service
+      name: wordpress
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: ClusterIP
+  - target:
+      version: v1
+      kind: PersistentVolumeClaim
+    patch: |-
+      - op: add
+        path: /spec/storageClassName
+        value: gp3
+  - target:
+      group: batch
+      version: v1
+      kind: Job
+      name: wordpress-install
+    patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: wordpress-install
+      spec:
+        template:
+          spec:
+            affinity:
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchLabels:
+                        app: wordpress
+                        tier: frontend
+                    topologyKey: kubernetes.io/hostname
