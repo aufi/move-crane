@@ -20,11 +20,12 @@ protection.
 | Code | GitHub issue | Creates a branch and pull request implementing a well-scoped issue. |
 | Fix | Pull request | Updates a Fullsend code-agent pull request in response to a specific request. |
 
-The earlier setup used the experimental Codex runtime. The
-[current upgrade plan](FULLSEND_ENMAAS_PLAN.md) targets Fullsend v0.54.0
-and DeepSeek-V4.1-Flash-1017 through EnMaaS, with the runtime to be confirmed
-after connection details are supplied. This is a planned migration, not a
-verified deployment.
+This guide describes the earlier personal pilot. The
+[current installation plan](FULLSEND_ENMAAS_PLAN.md) targets `migtools/crane`
+with Fullsend v0.57.0, the Claude Code runtime, and Claude Sonnet 5.5 on Google
+Vertex AI through WIF. Vertex inference is verified there; Fullsend agent
+integration is pending. The personal-pilot boundaries below apply to this
+historical guide.
 Treat every output as a proposal that requires normal human review.
 
 ## Before You Start

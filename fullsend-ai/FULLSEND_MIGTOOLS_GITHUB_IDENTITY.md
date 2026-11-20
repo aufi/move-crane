@@ -66,6 +66,9 @@ access alone does not provide it.
 
 ## Next setup stage
 
+Use the [v0.57.0 installation plan](FULLSEND_ENMAAS_PLAN.md) for the current
+release, setup command, Sonnet 5.5 overrides, and validation sequence.
+
 After App installation is confirmed, prepare the Fullsend installation with
 all six standard agents, the selected managed mint, and the already verified
 Vertex WIF route. Ensure all parent and child model selections use models

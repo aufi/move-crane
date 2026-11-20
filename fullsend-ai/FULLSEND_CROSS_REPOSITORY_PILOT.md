@@ -122,23 +122,24 @@ cross-repository automation path.
 
 ## Required Preparation
 
-Before the first Fullsend run in `crane-lib-pilot`:
+For a follow-up library rollout based on this experiment:
 
 1. Enable only the Actions workflows required for the library pilot.
 2. Configure branch protection, required checks, CODEOWNERS, and pilot
    instructions before enabling write-capable agents.
-3. Install Fullsend Apps only for `aufi/crane-lib-pilot`.
+3. Install Fullsend Apps only for the approved library repository selected below.
 4. Configure the same reviewed Fullsend version, runtime, model, community
    mint decision, and inference policy used by the Crane pilot. The
-   [current plan](FULLSEND_ENMAAS_PLAN.md) targets v0.54.0 and EnMaaS
-   DeepSeek-V4.1-Flash-1017; connection details and the final runtime are pending.
-5. If EnMaaS uses API-key authentication, add a separate
-   `FULLSEND_INFERENCE_GATEWAY_API_KEY` secret to the library repository;
-   GitHub repository secrets are not shared between repositories. If using
-   direct OIDC trust, authorize the library repository separately at the gateway.
+   [current plan](FULLSEND_ENMAAS_PLAN.md) targets `migtools/crane` with
+   v0.57.0, the Claude Code runtime, and Claude Sonnet 5.5 on Vertex AI via WIF.
+5. Choose an approved library repository and authorize it separately through
+   repo-scoped WIF/IAM and GitHub App access. The personal `aufi` repositories
+   are outside the current ITPC allowlist. The old EnMaaS API-key setup is
+   superseded and must not be copied into this rollout.
 6. Run triage and review validation in the library repository before enabling
    code and fix workflows there.
-7. Confirm that every new branch and pull request targets the pilot repository.
+7. Confirm that every new branch and pull request targets the approved library
+   repository.
 
 ## Dependency Decision Required
 
